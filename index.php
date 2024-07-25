@@ -45,5 +45,13 @@
             ?>
         </table>
         <p class="tableNote">&ast; A grey dashed line divides billing cycles.</p>
+        <div class="dropdown tableNote">
+            <button onclick="displayList()" class="dropbtn"><i class="fa fa-calendar-o" aria-hidden="true"></i> Add to Calendar</button>
+            <div id="dropdown" class="dropdown-content tableNote">
+                <a href="cal.ics"> <i class="fa fa-apple" aria-hidden="true"></i> Apple Calendar</a>
+                <a href="https://calendar.google.com/calendar/embed?src=ac648aqcdoquvq16v1ab33tcckgmti35%40import.calendar.google.com&ctz=America%2FNew_York" target="_blank"> <i class="fa fa-google" aria-hidden="true"></i> Google Calendar</a>
+                <a href="cal.ics" download> <i class="fa fa-ics" aria-hidden="true"></i> Download ICS</a>
+            </div>
+        </div>
     </main>
 <?php include 'footer.php' ?>
