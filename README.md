@@ -6,7 +6,6 @@ This is a personal project of mine that is still under development. It is a port
 ### Website Demo
 ![Demo](images/utility.gif)
 
-
 ### Requirements
 1. Python Libraries
     1. `sqlalchemy`
