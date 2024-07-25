@@ -1,0 +1,6 @@
+.htaccess
+.DS_Store
+webdb-cacert.pem
+Bills/
+.env
+__pycache__/

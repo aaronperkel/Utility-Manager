@@ -1,0 +1,61 @@
+header {
+    display: grid;
+    grid-template-areas: 1fr 1fr;
+    margin-top: 1em;
+}
+
+header a {
+    margin: auto;
+    margin-right: 0px;
+    margin-top: 1em;
+}
+
+table {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+}
+
+thead, tbody {
+    display: contents;
+}
+
+tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 1%;
+    border: thin solid black;
+}
+
+td:hover {
+    background-color: unset;
+}
+
+th:hover {
+    background-color: var(--sec-bg-color);
+}   
+
+th, td {
+    display: block;
+    padding: 8px;
+}
+
+th {
+    background-color: var(--sec-bg-color);
+}
+
+td:nth-child(6) div {
+    all: unset;
+}
+
+.spanTwoMobile {
+    grid-column: span 2;
+}
+
+nav {
+    margin: auto;
+}
+
+.navBox {
+    grid-template-columns: auto 40%;
+}
