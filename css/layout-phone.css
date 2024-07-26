@@ -48,6 +48,10 @@ td:nth-child(6) div {
     all: unset;
 }
 
+tr:nth-child(3n+5) {
+    border-bottom: dashed 5px #444;
+}
+
 .spanTwoMobile {
     grid-column: span 2;
 }
