@@ -36,45 +36,13 @@ def get_email_body(num, date):
     reminder = """
     <hr>
     <span style="font: 12pt serif;">
+        <p><b><em>Note:</em></b></p>
+        <p>The current Internet bill is supposed to be negative.</p>
         <p>
-            <b>Reminder:</b>
-        </p>
-        <p>
-            To stay up-to-date with our utility bills, you can subscribe to our shared calendar.
-        </p>
-        <div style="display: grid; grid-template-columns: auto auto; grid-gap: 10px;">
-            <div>
-                <p>
-                    <b>Apple Calendar:</b>
-                </p>
-                <p>
-                On your Apple device, click on or visit this link: 
-                <a href="https://aperkel.w3.uvm.edu/utilities/cal.ics" target="_blank">https://aperkel.w3.uvm.edu/utilities/cal.ics</a>.
-                </p>
-            </div>
-            <div>
-                <p>
-                    <b>Google Calendar:</b>
-                </p>
-                <p>
-                    Open Google Calendar.
-                    On the left side, find "Other calendars" and click the + icon.
-                    Select "From URL" and enter the calendar URL: 		<a href="https://aperkel.w3.uvm.edu/utilities/cal.ics" target="_blank">https://aperkel.w3.uvm.edu/utilities/cal.ics</a>
-                    Click "Add Calendar."
-                </p>
-            </div>
-            <div style="grid-column: span 2;">
-                <p>
-                    <b>Other Calendar Applications:</b>
-                </p>
-                <p>
-                Look for an option to add a calendar by URL.
-                Enter the calendar URL: <a href="https://aperkel.w3.uvm.edu/utilities/cal.ics" target="_blank">https://aperkel.w3.uvm.edu/utilities/cal.ics</a> and follow the prompts.
-                </p>
-            </div>
-        </div>
-        <p>
-        Thank you for keeping track of your payments!
+            The first bill included two months of service,
+            but since we deactivated service for the month of July,
+            we were refunded that amount. The next bill have the credit
+            subtracted from the total.
         </p>
     </span>"""
 
