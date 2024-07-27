@@ -31,7 +31,7 @@ def get_email_body(num, date):
     <p style="font: 14pt serif;">
     <span style="color: green;">
     81 Buell Utilities</span><br>
-    P: (478)262-8935 | E: aaronperkel@gmail.com</p>"""
+    P: (478)262-8935 | E: me@aaronperkel.com</p>"""
 
     reminder = """
     <hr>
@@ -160,7 +160,7 @@ def confirm(recip, sub, msg):
     msg = MIMEText(body, 'html')
     msg['Subject'] = subject
     msg['From'] = '81 Buell Utilities <' + sender_email + '>'
-    msg['To'] = 'aaron.perkel27@gmail.com'
+    msg['To'] = 'me@aaronperkel.com'
 
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
         server.login(sender_email, sender_password)
