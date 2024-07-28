@@ -77,7 +77,8 @@ def check_bills():
 def send_email(date):
     global date_format
     
-    sender_email = 'aaronperkel@gmail.com'
+    sender_email = 'aaron.perkel@icloud.com'
+    sender = 'me@aaronperkel.com'
     sender_password = os.getenv('EMAIL_PASS')
     recipients = ['aperkel@uvm.edu', 'oacook@uvm.edu', 'bquacken@uvm.edu']
 
@@ -96,7 +97,7 @@ def send_email(date):
 
     msg = MIMEText(body, 'html')
     msg['Subject'] = subject
-    msg['From'] = '81 Buell Utilities <' + sender_email + '>'
+    msg['From'] = '81 Buell Utilities <' + sender + '>'
     msg['To'] = ', '.join(recipients)
 
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
@@ -116,7 +117,8 @@ def send_email(date, people):
     if ('Ben' in people):
         recipients.append('bquacken@uvm.edu')
 
-    sender_email = 'aaronperkel@gmail.com'
+    sender_email = 'aaron.perkel@icloud.com'
+    sender = 'me@aaronperkel.com'
     sender_password = os.getenv('EMAIL_PASS')
     
     new_date = datetime.datetime.strptime(date, date_format)
@@ -134,17 +136,18 @@ def send_email(date, people):
 
     msg = MIMEText(body, 'html')
     msg['Subject'] = subject
-    msg['From'] = '81 Buell Utilities <' + sender_email + '>'
+    msg['From'] = '81 Buell Utilities <' + sender + '>'
     msg['To'] = ', '.join(recipients)
 
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+    with smtplib.SMTP_SSL('smtp.mail.me.com', 465) as server:
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, recipients, msg.as_string())
 
     confirm(msg['To'], msg['Subject'], body)
 
 def confirm(recip, sub, msg):
-    sender_email = 'aaronperkel@gmail.com'
+    sender_email = 'aaron.perkel@icloud.com'
+    sender = 'me@aaronperkel.com'
     sender_password = os.getenv('EMAIL_PASS')
     subject = 'Mail Sent'
 
@@ -159,16 +162,17 @@ def confirm(recip, sub, msg):
 
     msg = MIMEText(body, 'html')
     msg['Subject'] = subject
-    msg['From'] = '81 Buell Utilities <' + sender_email + '>'
-    msg['To'] = 'me@aaronperkel.com'
+    msg['From'] = '81 Buell Utilities <' + sender + '>'
+    msg['To'] = 'aperkel@uvm.edu'
 
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+    with smtplib.SMTP_SSL('smtp.mail.me.com', 465) as server:
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, msg['To'], msg.as_string())
 
 def new_bill():
 
-    sender_email = 'aaronperkel@gmail.com'
+    sender_email = 'aaron.perkel@icloud.com'
+    sender = 'me@aaronperkel.com'
     sender_password = os.getenv('EMAIL_PASS')
     recipients = ['aperkel@uvm.edu', 'oacook@uvm.edu', 'bquacken@uvm.edu']
     subject = 'New Bill Posted'
@@ -177,7 +181,7 @@ def new_bill():
 
     msg = MIMEText(body, 'html')
     msg['Subject'] = subject
-    msg['From'] = '81 Buell Utilities <' + sender_email + '>'
+    msg['From'] = '81 Buell Utilities <' + sender + '>'
     msg['To'] = ', '.join(recipients)
 
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
