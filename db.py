@@ -100,7 +100,10 @@ def send_email(date):
     msg['From'] = '81 Buell Utilities <' + sender + '>'
     msg['To'] = ', '.join(recipients)
 
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, recipients, msg.as_string())
 
@@ -139,7 +142,10 @@ def send_email(date, people):
     msg['From'] = '81 Buell Utilities <' + sender + '>'
     msg['To'] = ', '.join(recipients)
 
-    with smtplib.SMTP_SSL('smtp.mail.me.com', 465) as server:
+    with smtplib.SMTP('smtp.mail.me.com', 587) as server:
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, recipients, msg.as_string())
 
@@ -165,7 +171,10 @@ def confirm(recip, sub, msg):
     msg['From'] = '81 Buell Utilities <' + sender + '>'
     msg['To'] = 'aperkel@uvm.edu'
 
-    with smtplib.SMTP_SSL('smtp.mail.me.com', 465) as server:
+    with smtplib.SMTP('smtp.mail.me.com', 587) as server:
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, msg['To'], msg.as_string())
 
@@ -184,7 +193,10 @@ def new_bill():
     msg['From'] = '81 Buell Utilities <' + sender + '>'
     msg['To'] = ', '.join(recipients)
 
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, recipients, msg.as_string())
 
@@ -192,7 +204,7 @@ def new_bill():
         
 if __name__ == '__main__':
 
-    send_email('2024-07-21', 'Aaron')
+    send_email('2024-08-30', 'Aaron')
 
     # schedule.every().day.at("00:00").do(check_bills)
     # emails_sent = []
