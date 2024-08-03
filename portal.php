@@ -66,8 +66,6 @@
         include "update_ics.php";
         $command = escapeshellcmd('./venv/bin/python3 new_bill.py');
         $output = shell_exec($command);
-        
-
     }
     ?>
     <main>
@@ -131,19 +129,19 @@
         </table>
 
         <table>
-            <tr>
-                <th colspan="7" class="spanTwoMobile">New Entry</th>
-            </tr>
-            <tr>
-                <th>Date Billed</th>
-                <th>Item</th>
-                <th>Bill Total</th>
-                <th>Cost per Person</th>
-                <th>Due Date</th>
-                <th>Status</th>
-                <th class="spanTwoMobile">/path/to/bill</th>
-            </tr>
-            <form action="#" id="newEntry" method="POST">
+        <form action="#" id="newEntry" method="POST">
+                <tr>
+                    <th colspan="7" class="spanTwoMobile">New Entry</th>
+                </tr>
+                <tr>
+                    <th>Date Billed</th>
+                    <th>Item</th>
+                    <th>Bill Total</th>
+                    <th>Cost per Person</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th class="spanTwoMobile">/path/to/bill</th>
+                </tr>
                 <tr>
                     <td><input type="date" id="date" name="date" required></td>
                     <td>
