@@ -29,6 +29,11 @@ def get_email_body(num, date):
 
     body += """
     <p style="font: 14pt serif;">
+        Please login to
+        <a href="https://aperkel.w3.uvm.edu/utilities">81 Buell Utilities</a>
+        for more info.
+    </p>
+    <p style="font: 14pt serif;">
     <span style="color: green;">
     81 Buell Utilities</span><br>
     P: (478)262-8935 | E: me@aaronperkel.com</p>"""
