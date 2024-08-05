@@ -41,13 +41,19 @@ def get_email_body(num, date):
     reminder = """
     <hr>
     <span style="font: 12pt serif;">
-        <p><b><em>Note:</em></b></p>
-        <p>The current Internet bill is supposed to be negative.</p>
+        <p><b>Attention!</b></p>
         <p>
-            The first bill included two months of service,
-            but since we deactivated service for the month of July,
-            we were refunded that amount. The next bill have the credit
-            subtracted from the total.
+            Whoever has still not paid by the time a bill is due 
+            will be responsible for covering any late fees that are 
+            associated with the late payment.
+        </p>
+        <p>
+            If more than one person is late, they will both split whatever fees
+            are associated with the late payment.
+        </p>
+        <p>
+            Please reach out if you feel like this is not a fair system
+            or if you have a better idea.
         </p>
     </span>"""
 
