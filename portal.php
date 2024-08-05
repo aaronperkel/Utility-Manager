@@ -8,7 +8,6 @@
     $cost = '';
     $due =  '';
     $status = '';
-    $view = '';
 
     function getData($field) {
         if (!isset($_POST[$field])) {
@@ -26,10 +25,26 @@
     $cost = getData('cost');
     $due =  getData('due');
     $status = getData('status');
-    $view = getData('view');
 
     $total = (string) $total;
     $cost = (string) $cost;
+
+    if (isset($_FILES['view']) && $_FILES['view']['error'] === UPLOAD_ERR_OK) {
+        if ($item == "Gas") {
+        $uploadDir = 'Bills/Gas/';
+        } elseif ($item == "Electric") {
+            $uploadDir = 'Bills/Electric/';
+        } elseif ($item == "Internet") {
+            $uploadDir = 'Bills/Internet/';
+        }
+        $uploadFile = $uploadDir . basename($_FILES['view']['name']);
+        
+        if (move_uploaded_file($_FILES['view']['tmp_name'], $uploadFile)) {
+            $filePath = $uploadFile;
+        }
+    } else {
+        $filePath = null; // No file uploaded
+    }
 
     $dataIsGood = true;
     if ($date == '') {
@@ -50,7 +65,7 @@
     if ($status == '') {
         $dataIsGood = false;
     }
-    if ($view == '') {
+    if ($filePath == null) {
         $dataIsGood = false;
     }
 
@@ -59,12 +74,12 @@
     $sql = 'INSERT INTO tblUtilities (fldDate, fldItem, fldTotal, fldCost, fldDue, fldStatus, fldView, fldOwe)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
     $statement = $pdo->prepare($sql);
-    $data = array($date, $item, $total, $cost, $due, $status, $view, 'Aaron, Owen, Ben');
+    $data = array($date, $item, $total, $cost, $due, $status, $filePath, 'Aaron, Owen, Ben');
 
     if ($dataIsGood) {
         $statement->execute($data);
         include "update_ics.php";
-        $command = escapeshellcmd('./venv/bin/python3 new_bill.py');
+        $command = escapeshellcmd('python new_bill.py');
         $output = shell_exec($command);
     }
     ?>
@@ -129,7 +144,7 @@
         </table>
 
         <table>
-        <form action="#" id="newEntry" method="POST">
+        <form action="#" id="newEntry" method="POST" enctype="multipart/form-data">
                 <tr>
                     <th colspan="7" class="spanTwoMobile">New Entry</th>
                 </tr>
@@ -140,7 +155,7 @@
                     <th>Cost per Person</th>
                     <th>Due Date</th>
                     <th>Status</th>
-                    <th class="spanTwoMobile">/path/to/bill</th>
+                    <th class="spanTwoMobile">See Bill</th>
                 </tr>
                 <tr>
                     <td><input type="date" id="date" name="date" required></td>
@@ -163,7 +178,10 @@
                         </div>
                     </td>
                     <td class="spanTwoMobile">
-                        <input type="text" id="view" name="view" required>
+                        <label for="view" class="custom-file-upload">
+                            <input type="file" id="view" name="view" required>
+                            Upload File
+                        </label>
                     </td>
                 </tr>
                 <tr>
