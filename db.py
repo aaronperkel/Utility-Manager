@@ -65,6 +65,10 @@ def check_bills():
     global dates
     global people
 
+    print('============== Checking Bills ==============')
+    now = datetime.datetime.now()
+    print(now.strftime("%m/%d/%Y %H:%M:%S"))
+
     ssl_args = {'ssl': {'ca': 'webdb-cacert.pem'}}
     db_engine = create_engine(
             'mysql://' + os.getenv('DBUSER') + ':' + os.getenv('DBPASS') + '@webdb.uvm.edu/' + os.getenv('DBNAME'),
@@ -72,16 +76,21 @@ def check_bills():
     Session = sessionmaker(bind=db_engine)
     db = Session()
 
+    print('connected')
+
     with db_engine.connect() as conn:
         result = conn.execute(text("SELECT fldDue, fldOwe FROM tblUtilities WHERE fldStatus = 'Unpaid'"))
     db.close()
+
+    print('got SQL result')
 
     for row in result.all():
         dates.append(row[0])
         people.append(row[1])
 
-    print(dates)
-    print(people)
+    print('dates: ' + ''.join(dates))
+    print('people: ' + ''.join(people))
+    print('==================== Done ==================== ')
     
     return dates, people
 
@@ -215,34 +224,32 @@ def new_bill():
         
 if __name__ == '__main__':
 
-    send_email('2024-08-30', 'Aaron')
+    schedule.every().day.at("00:00").do(check_bills)
+    emails_sent = []
 
-    # schedule.every().day.at("00:00").do(check_bills)
-    # emails_sent = []
+    while True:
+        dates = []
+        people = []
+        schedule.run_pending()
 
-    # while True:
-    #     dates = []
-    #     people = []
-    #     schedule.run_pending()
+        dates_to_remove = []
+        for date in dates:
+            if date in emails_sent:
+                dates_to_remove.append(date)
 
-    #     # dates_to_remove = []
-    #     # for date in dates:
-    #     #     if date in emails_sent:
-    #     #         dates_to_remove.append(date)
+        for date in dates_to_remove:
+            dates.remove(date)
 
-    #     # for date in dates_to_remove:
-    #     #     dates.remove(date)
+        if dates:
+            date = dates[0]
+            new_date = datetime.datetime.strptime(date, date_format)
+            today = time.strftime("%m/%d/%y", time.localtime())
+            today = datetime.datetime.strptime(today, date_format)
+            delta = new_date - today
+            days_left = delta.days
+            emails_sent.append(date)
 
-    #     if dates:
-    #         date = dates[0]
-    #         new_date = datetime.datetime.strptime(date, date_format)
-    #         today = time.strftime("%m/%d/%y", time.localtime())
-    #         today = datetime.datetime.strptime(today, date_format)
-    #         delta = new_date - today
-    #         days_left = delta.days
-    #         emails_sent.append(date)
+            if days_left <= 7:
+                send_email(date)
 
-    #         if days_left <= 5:
-    #             send_email(date)
-
-    #     time.sleep(1)
+        time.sleep(1)
