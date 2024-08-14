@@ -29,22 +29,15 @@
     $total = (string) $total;
     $cost = (string) $cost;
 
-    if (isset($_FILES['view']) && $_FILES['view']['error'] === UPLOAD_ERR_OK) {
-        if ($item == "Gas") {
+    if ($item == "Gas") {
         $uploadDir = 'Bills/Gas/';
-        } elseif ($item == "Electric") {
-            $uploadDir = 'Bills/Electric/';
-        } elseif ($item == "Internet") {
-            $uploadDir = 'Bills/Internet/';
-        }
-        $uploadFile = $uploadDir . basename($_FILES['view']['name']);
-        
-        if (move_uploaded_file($_FILES['view']['tmp_name'], $uploadFile)) {
-            $filePath = $uploadFile;
-        }
-    } else {
-        $filePath = null; // No file uploaded
+    } elseif ($item == "Electric") {
+        $uploadDir = 'Bills/Electric/';
+    } elseif ($item == "Internet") {
+        $uploadDir = 'Bills/Internet/';
     }
+
+    $filePath = $uploadDir . getData('view');
 
     $dataIsGood = true;
     if ($date == '') {
@@ -177,12 +170,7 @@
                             <label for="paid">Paid</label>
                         </div>
                     </td>
-                    <td class="spanTwoMobile">
-                        <label for="view" class="custom-file-upload">
-                            <input type="file" id="view" name="view" required>
-                            Upload File
-                        </label>
-                    </td>
+                    <td class="spanTwoMobile"><input type="text" id="view" name="view" required></td>
                 </tr>
                 <tr>
                     <td colspan="7" class="spanTwoMobile"><input type="submit" value="Submit"></td>

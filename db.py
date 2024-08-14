@@ -213,7 +213,7 @@ def new_bill():
     msg['From'] = '81 Buell Utilities <' + sender + '>'
     msg['To'] = ', '.join(recipients)
 
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+    with smtplib.SMTP('smtp.mail.me.com', 587) as server:
         server.ehlo()
         server.starttls()
         server.ehlo()
