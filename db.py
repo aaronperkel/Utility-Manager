@@ -88,9 +88,7 @@ def check_bills():
         dates.append(row[0])
         people.append(row[1])
 
-    print('dates: ' + ''.join(dates))
-    print('people: ' + ''.join(people))
-    print('==================== Done ==================== ')
+    print('=================== Done ===================')
     
     return dates, people
 
@@ -225,31 +223,30 @@ def new_bill():
 if __name__ == '__main__':
 
     schedule.every().day.at("00:00").do(check_bills)
-    emails_sent = []
+    # schedule.every().day.at("12:00").do(check_bills)
 
     while True:
         dates = []
         people = []
-        schedule.run_pending()
-
-        dates_to_remove = []
-        for date in dates:
-            if date in emails_sent:
-                dates_to_remove.append(date)
-
-        for date in dates_to_remove:
-            dates.remove(date)
+        schedule.run_pending()        
 
         if dates:
-            date = dates[0]
-            new_date = datetime.datetime.strptime(date, date_format)
-            today = time.strftime("%m/%d/%y", time.localtime())
-            today = datetime.datetime.strptime(today, date_format)
-            delta = new_date - today
-            days_left = delta.days
-            emails_sent.append(date)
+            print('============== Email Scheduling ==============')    
+            print('Unpaid Bills:')
+            for i, date in enumerate(dates):
+                print(f'- {date}: {people[i]}')
+                new_date = datetime.datetime.strptime(date, date_format)
+                today = time.strftime("%Y-%m-%d", time.localtime())
+                today = datetime.datetime.strptime(today, date_format)
+                delta = new_date - today
+                days_left = delta.days
+                print(f'  - Days until bill due: {days_left}')
 
-            if days_left <= 7:
-                send_email(date)
-
-        time.sleep(1)
+                if days_left <= 7:
+                    print('  - Sending Email')
+                    send_email(date)
+                    print('  - Email Sent')
+                    time.sleep(1)
+                else:
+                    print('  - Not Sending Email')
+            print('=================== Done ===================')
