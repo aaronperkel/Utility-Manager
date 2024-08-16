@@ -82,11 +82,13 @@ def check_bills():
         result = conn.execute(text("SELECT fldDue, fldOwe FROM tblUtilities WHERE fldStatus = 'Unpaid'"))
     db.close()
 
-    print('got SQL result')
-
     for row in result.all():
         dates.append(row[0])
         people.append(row[1])
+
+    print('got SQL result')
+    print(f'Dates: {dates}')
+    print(f'People: {people}')
 
     print('=================== Done ===================')
     
@@ -219,16 +221,46 @@ def new_bill():
         server.sendmail(sender_email, recipients, msg.as_string())
 
     confirm(msg['To'], msg['Subject'], body)
-        
-if __name__ == '__main__':
 
-    schedule.every().day.at("00:00").do(check_bills)
-    # schedule.every().day.at("12:00").do(check_bills)
+def run_schedule():
+    global dates
+    global people
+
+    schedule.every().day.at("10:00").do(check_bills)
 
     while True:
         dates = []
         people = []
         schedule.run_pending()        
+
+        if dates:
+            print('============== Email Scheduling ==============')    
+            print('Unpaid Bills:')
+            for i, date in enumerate(dates):
+                print(f'- {date}: {people[i]}')
+                new_date = datetime.datetime.strptime(date, date_format)
+                today = time.strftime("%Y-%m-%d", time.localtime())
+                today = datetime.datetime.strptime(today, date_format)
+                delta = new_date - today
+                days_left = delta.days
+                print(f'  - Days until bill due: {days_left}')
+
+                if days_left <= 7:
+                    print('  - Sending Email')
+                    send_email(date)
+                    print('  - Email Sent')
+                    time.sleep(1)
+                else:
+                    print('  - Not Sending Email')
+            print('=================== Done ===================')
+        
+if __name__ == '__main__':
+    print('Press Enter to call check_bills()')
+    while True:
+        dates = []
+        people = []
+        input()
+        check_bills()        
 
         if dates:
             print('============== Email Scheduling ==============')    
