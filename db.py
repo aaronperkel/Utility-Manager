@@ -38,24 +38,7 @@ def get_email_body(num, date):
     81 Buell Utilities</span><br>
     P: (478)262-8935 | E: me@aaronperkel.com</p>"""
 
-    reminder = """
-    <hr>
-    <span style="font: 12pt serif;">
-        <p><b>Attention!</b></p>
-        <p>
-            Whoever has still not paid by the time a bill is due 
-            will be responsible for covering any late fees that are 
-            associated with the late payment.
-        </p>
-        <p>
-            If more than one person is late, they will both split whatever fees
-            are associated with the late payment.
-        </p>
-        <p>
-            Please reach out if you feel like this is not a fair system
-            or if you have a better idea.
-        </p>
-    </span>"""
+    reminder = ""
 
     body += reminder
 
@@ -82,15 +65,14 @@ def check_bills():
         result = conn.execute(text("SELECT fldDue, fldOwe FROM tblUtilities WHERE fldStatus = 'Unpaid'"))
     db.close()
 
+    print('got SQL result')
+
     for row in result.all():
         dates.append(row[0])
         people.append(row[1])
-
-    print('got SQL result')
+        
     print(f'Dates: {dates}')
     print(f'People: {people}')
-
-    print('=================== Done ===================')
     
     return dates, people
 
@@ -263,7 +245,7 @@ if __name__ == '__main__':
         check_bills()        
 
         if dates:
-            print('============== Email Scheduling ==============')    
+            print('-------------- Email Scheduling --------------')    
             print('Unpaid Bills:')
             for i, date in enumerate(dates):
                 print(f'- {date}: {people[i]}')
@@ -281,4 +263,4 @@ if __name__ == '__main__':
                     time.sleep(1)
                 else:
                     print('  - Not Sending Email')
-            print('=================== Done ===================')
+            print('=================== Done ===================\n')
