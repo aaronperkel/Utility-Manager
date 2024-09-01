@@ -4,4 +4,4 @@ webdb-cacert.pem
 Bills/
 .env
 __pycache__/
-.ipynb_checkpoints
+.ipynb_checkpoints/
