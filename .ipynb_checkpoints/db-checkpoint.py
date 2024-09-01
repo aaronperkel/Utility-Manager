@@ -229,7 +229,7 @@ def run_schedule():
 
                 if days_left <= 7:
                     print('  - Sending Email')
-                    send_email(date, people)
+                    send_email(date)
                     print('  - Email Sent')
                     time.sleep(1)
                 else:
@@ -258,7 +258,7 @@ if __name__ == '__main__':
 
                 if days_left <= 7:
                     print('  - Sending Email')
-                    send_email(date, people[i])
+                    send_email(date)
                     print('  - Email Sent')
                     time.sleep(1)
                 else:
