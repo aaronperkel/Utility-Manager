@@ -38,12 +38,7 @@ def get_email_body(num, date):
     81 Buell Utilities</span><br>
     P: (478)262-8935 | E: me@aaronperkel.com</p>"""
 
-    reminder = """
-        <p style="font: 14pt serif;"><em>Please Note,</em></p>
-        <p style="font: 14pt serif;">Burlington Electric department has added
-        a $3.50 processing fee to their bill payments. You will see this
-        reflected on the website, but not on the bill. This is why those
-        numbes will not match.</p>"""
+    reminder = """"""
 
     body += reminder
 
