@@ -71,8 +71,8 @@ $data = array($date, $item, $total, $cost, $due, $status, $filePath, 'Alice, Bob
 
 if ($dataIsGood) {
     $statement->execute($data);
-    include "update_ics.php";
-    $command = escapeshellcmd('python new_bill.py');
+    include "php/update_ics.php";
+    $command = escapeshellcmd('python python/new_bill.py');
     $output = shell_exec($command);
 }
 ?>
@@ -108,13 +108,13 @@ if ($dataIsGood) {
             if ($cell['fldStatus'] == "Paid") {
                 print '<td class="hover">' . htmlspecialchars($cell['fldDue']) . '</td>';
                 print '<td class="paid">' . htmlspecialchars($cell['fldStatus']);
-                print '<form method="POST" action="update_status_unpaid.php" class="status-action-form">';
+                print '<form method="POST" action="php/update_status_unpaid.php" class="status-action-form">';
                 print '<input type="hidden" name="id" value="' . htmlspecialchars($cell['pmkBillID']) . '">';
                 print '<input type="submit" name="updateStatus" class="paidButton" value="Mark as Unpaid">';
                 print '</form></td>';
             } else {
                 print '<td class="hover">' . htmlspecialchars($cell['fldDue']);
-                print '<form method="POST" action="send_reminder.php" class="status-action-form">';
+                print '<form method="POST" action="php/send_reminder.php" class="status-action-form">';
                 print '<input type="hidden" name="pmk" value="' . htmlspecialchars($cell['pmkBillID']) . '">';
                 print '<input type="submit" name="sendReminder" class="paidButton" value="Send Reminder" style="margin-top:6px">';
                 print '</form></td>';
@@ -124,7 +124,7 @@ if ($dataIsGood) {
                 $owedPeople = array_map('trim', explode(',', $cell['fldOwe']));
 
                 // Start the form for updating owed names
-                print '<form method="POST" action="update_owe.php" class="status-form">';
+                print '<form method="POST" action="php/update_owe.php" class="status-form">';
                 print '<input type="hidden" name="id2" value="' . htmlspecialchars($cell['pmkBillID']) . '">';
 
                 // Container for checkboxes
@@ -151,7 +151,7 @@ if ($dataIsGood) {
                 print '</form>';
 
                 // Form to mark entire bill as paid
-                print '<form method="POST" action="update_status_paid.php" class="status-action-form">';
+                print '<form method="POST" action="php/update_status_paid.php" class="status-action-form">';
                 print '<input type="hidden" name="id" value="' . htmlspecialchars($cell['pmkBillID']) . '">';
                 print '<input type="submit" name="updateStatus" class="paidButton" value="Mark as Paid">';
                 print '</form></td>';
