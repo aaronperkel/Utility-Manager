@@ -3,7 +3,7 @@ include 'connect-DB.php';
 
 if (isset($_POST['updateStatus'])) {
     $id = htmlspecialchars($_POST['id']);
-    $sql = 'UPDATE tblUtilities SET fldStatus = "Unpaid" WHERE pmkBillID = ?';
+    $sql = 'UPDATE tblCSFair SET fldStatus = "Unpaid" WHERE pmkBillID = ?';
     $statement = $pdo->prepare($sql);
     $data = array($id);
     $statement->execute($data);
