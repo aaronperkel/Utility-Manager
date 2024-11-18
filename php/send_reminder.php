@@ -16,11 +16,9 @@ if (isset($_POST['sendReminder'])) {
         return "'" . $value . "'";
     }, $owedArray));
 
-    $command = escapeshellcmd('python3 ../python/send_reminder.py "' . $result['fldDue'] . '" "[' .  $owedString .']"');
-    //$output = shell_exec($command);
+    $command = escapeshellcmd('python3 ../python/send_reminder.py "' . $result['fldDue'] . '" "' .  $owedString . '"');
+    $output = shell_exec($command);
 
-    print $command;
-
-    //header('Location: ' . $_SERVER['HTTP_REFERER']);
+    header('Location: ' . $_SERVER['HTTP_REFERER']);
 }
 ?>
