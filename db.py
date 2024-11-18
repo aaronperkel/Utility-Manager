@@ -30,15 +30,20 @@ def get_email_body(num, date):
     body += """
     <p style="font: 14pt serif;">
         Please login to
-        <a href="https://aperkel.w3.uvm.edu/utilities">81 Buell Utilities</a>
+        <a href="https://aperkel.w3.uvm.edu/cs-fair">Utility Reminders</a>
         for more info.
     </p>
     <p style="font: 14pt serif;">
     <span style="color: green;">
-    81 Buell Utilities</span><br>
+    Utility Reminders</span><br>
     P: (478)262-8935 | E: me@aaronperkel.com</p>"""
 
-    reminder = """"""
+    reminder = """
+        <p style="font: 14pt serif;"><em>Please Note,</em></p>
+        <p style="font: 14pt serif;">Burlington Electric department has added
+        a $3.50 processing fee to their bill payments. You will see this
+        reflected on the website, but not on the bill. This is why those
+        numbes will not match.</p>"""
 
     body += reminder
 
@@ -62,7 +67,7 @@ def check_bills():
     print('connected')
 
     with db_engine.connect() as conn:
-        result = conn.execute(text("SELECT fldDue, fldOwe FROM tblUtilities WHERE fldStatus = 'Unpaid'"))
+        result = conn.execute(text("SELECT fldDue, fldOwe FROM tblCSFair WHERE fldStatus = 'Unpaid'"))
     db.close()
 
     print('got SQL result')
@@ -82,7 +87,7 @@ def send_email(date):
     sender_email = 'aaron.perkel@icloud.com'
     sender = 'me@aaronperkel.com'
     sender_password = os.getenv('EMAIL_PASS')
-    recipients = ['aperkel@uvm.edu', 'oacook@uvm.edu', 'bquacken@uvm.edu']
+    recipients = ['aperkel@uvm.edu']
 
     new_date = datetime.datetime.strptime(date, date_format)
     today = time.strftime(date_format, time.localtime())
@@ -99,7 +104,7 @@ def send_email(date):
 
     msg = MIMEText(body, 'html')
     msg['Subject'] = subject
-    msg['From'] = '81 Buell Utilities <' + sender + '>'
+    msg['From'] = 'Utility Reminders <' + sender + '>'
     msg['To'] = ', '.join(recipients)
 
     with smtplib.SMTP('smtp.gmail.com', 587) as server:
@@ -112,15 +117,7 @@ def send_email(date):
     confirm(msg['To'], msg['Subject'], body)
 
 def send_email(date, people):
-    recipients = []
     global date_format
-
-    if ('Aaron' in people):
-        recipients.append('aperkel@uvm.edu')
-    if ('Owen' in people):
-        recipients.append('oacook@uvm.edu')
-    if ('Ben' in people):
-        recipients.append('bquacken@uvm.edu')
 
     sender_email = 'aaron.perkel@icloud.com'
     sender = 'me@aaronperkel.com'
@@ -137,21 +134,28 @@ def send_email(date, people):
     else:
         subject = 'Utility Bill Reminder'
 
-    body = get_email_body(0, date)
+    for name in people:
+        body = f"""
+        <p style="font:14pt serif;">
+            <span style="background-color:#b71c1c;color:#fff01f;font-size:40px;">
+            <strong>&nbsp;{name.strip(',')}&nbsp;</strong>
+            </span>
+        </p>"""
+        body += get_email_body(0, date)
 
-    msg = MIMEText(body, 'html')
-    msg['Subject'] = subject
-    msg['From'] = '81 Buell Utilities <' + sender + '>'
-    msg['To'] = ', '.join(recipients)
+        msg = MIMEText(body, 'html')
+        msg['Subject'] = subject
+        msg['From'] = 'Utility Reminders <' + sender + '>'
+        msg['To'] = 'aperkel@uvm.edu'
 
-    with smtplib.SMTP('smtp.mail.me.com', 587) as server:
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, recipients, msg.as_string())
+        with smtplib.SMTP('smtp.mail.me.com', 587) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, 'aperkel@uvm.edu', msg.as_string())
 
-    confirm(msg['To'], msg['Subject'], body)
+        confirm(msg['To'], msg['Subject'], body)
 
 def confirm(recip, sub, msg):
     sender_email = 'aaron.perkel@icloud.com'
@@ -170,7 +174,7 @@ def confirm(recip, sub, msg):
 
     msg = MIMEText(body, 'html')
     msg['Subject'] = subject
-    msg['From'] = '81 Buell Utilities <' + sender + '>'
+    msg['From'] = 'Utility Reminders <' + sender + '>'
     msg['To'] = 'aperkel@uvm.edu'
 
     with smtplib.SMTP('smtp.mail.me.com', 587) as server:
@@ -185,14 +189,14 @@ def new_bill():
     sender_email = 'aaron.perkel@icloud.com'
     sender = 'me@aaronperkel.com'
     sender_password = os.getenv('EMAIL_PASS')
-    recipients = ['aperkel@uvm.edu', 'oacook@uvm.edu', 'bquacken@uvm.edu']
+    recipients = ['aperkel@uvm.edu']
     subject = 'New Bill Posted'
 
     body = get_email_body(1, sender_email)
 
     msg = MIMEText(body, 'html')
     msg['Subject'] = subject
-    msg['From'] = '81 Buell Utilities <' + sender + '>'
+    msg['From'] = 'Utility Reminders <' + sender + '>'
     msg['To'] = ', '.join(recipients)
 
     with smtplib.SMTP('smtp.mail.me.com', 587) as server:

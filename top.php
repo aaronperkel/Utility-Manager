@@ -6,7 +6,7 @@ $pathParts = pathinfo($phpSelf);
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>81 Buell Utilites</title>
+        <title>Utility Reminders</title>
         <meta name="author" content="Aaron Perkel">
         <meta name="description" content="A dashboard to keep
         track of the monthly utilities of our apartment">

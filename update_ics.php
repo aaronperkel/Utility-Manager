@@ -1,5 +1,5 @@
 <?php
-$sql = 'SELECT fldDue, fldStatus, fldItem FROM tblUtilities';
+$sql = 'SELECT fldDue, fldStatus, fldItem FROM tblCSFair';
 $statement = $pdo->query($sql);
 
 $dates = [];
@@ -13,7 +13,7 @@ while ($row = $statement->fetch(PDO::FETCH_ASSOC)) {
     $item[] = $row['fldItem'];
 }
 
-$ics_content = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//81 Buell Utilities//EN\n";
+$ics_content = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Utilities//EN\n";
 
 for ($i = 0; $i < count($dates); $i++) {
     // Parse date and format as required
