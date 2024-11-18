@@ -3,12 +3,12 @@
         if ($pathParts['filename'] == "index") {
             print 'activePage';
         }
-        ?>" href="/utilities">Home</a>
+        ?>" href="/cs-fair">Home</a>
 
         <a class="<?php
         if ($pathParts['filename'] == "portal") {
             print 'activePage';
         }
-        ?>" href="/utilities/portal">Admin Portal</a>
+        ?>" href="/cs-fair/portal.php">Admin Portal</a>
     </nav>
 </div>

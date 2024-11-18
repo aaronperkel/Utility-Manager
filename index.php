@@ -16,7 +16,7 @@
                 <th class="spanTwoMobile">See Bill</th>
             </tr>
             <?php
-            $sql = 'SELECT fldDate, fldItem, fldTotal, fldCost, fldDue, fldStatus, fldView, fldOwe FROM tblUtilities';
+            $sql = 'SELECT fldDate, fldItem, fldTotal, fldCost, fldDue, fldStatus, fldView, fldOwe FROM tblCSFair';
             $statement = $pdo->prepare($sql);
             $statement->execute();
 
