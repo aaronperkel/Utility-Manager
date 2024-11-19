@@ -1,0 +1,36 @@
+<Files "index.php">
+	AuthType Basic
+	AuthName "81 Buell Admin Portal"
+	AuthUserFile /users/a/p/aperkel/.htpasswd
+	require aaronperkel
+</Files>
+
+<Files "portal.php">
+	AuthType Basic
+	AuthName "81 Buell Admin Portal"
+	AuthUserFile /users/a/p/aperkel/.htpasswd
+	require user aaronperkel
+</Files>
+
+<Files "db.py">
+	AuthType Basic
+	AuthName "DB PY"
+	AuthUserFile /users/a/p/aperkel/.htpasswd
+	require user aaronperkel
+</Files>
+
+<Files "send_reminder.py">
+	AuthType Basic
+	AuthName "SR PY"
+	AuthUserFile /users/a/p/aperkel/.htpasswd
+	require user aaronperkel
+</Files>
+
+<Files "webdb-cacert.pem">
+	AuthType Basic
+	AuthName "CERT"
+	AuthUserFile /users/a/p/aperkel/.htpasswd
+	require user aaronperkel
+</Files>
+
+ErrorDocument 404 https://aperkel.w3.uvm.edu/notfound.html
