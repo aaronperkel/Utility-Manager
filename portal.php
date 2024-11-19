@@ -1,5 +1,11 @@
 <?php include 'top.php';
 
+// Optionally, check user role
+if ($_SESSION['role'] !== 'Admin') {
+    echo 'Access denied.';
+    exit;
+}
+
     $dataIsGood = false;
 
     $date = '';
