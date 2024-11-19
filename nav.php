@@ -9,6 +9,6 @@
         if ($pathParts['filename'] == "portal") {
             print 'activePage';
         }
-        ?>" href="/utilities/portal">Admin Portal</a>
+        ?>" href="/utilities/portal.php">Admin Portal</a>
     </nav>
 </div>
