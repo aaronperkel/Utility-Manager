@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <body>
     <header>
         <h1>81 Buell Utilties</h1>
-        <h2>New User Registration</h2>
+        <h2>Register</h2>
     </header>
 
     <main>
@@ -48,10 +48,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         ?>
 
-        <form method="post" action="authenticate.php">
+        <form method="post" action="register.php">
             <input class="user" type="text" name="username" placeholder="Username" required><br>
             <input class="pass" type="password" name="password" placeholder="Password" required><br>
-            <button type="submit">Login</button>
+            <button type="submit">Register</button>
         </form>
     </main>
 

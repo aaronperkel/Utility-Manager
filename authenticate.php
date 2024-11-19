@@ -3,6 +3,26 @@
 session_start();
 include 'php/connect-DB.php';
 
+// Password validation function
+function validate_password($password) {
+    if (strlen($password) < 8 || strlen($password) > 25) {
+        return 'Password must be between 8 and 25 characters long.';
+    }
+    if (!preg_match('/[A-Z]/', $password)) {
+        return 'Password must contain at least one uppercase letter.';
+    }
+    if (!preg_match('/[a-z]/', $password)) {
+        return 'Password must contain at least one lowercase letter.';
+    }
+    if (!preg_match('/[0-9]/', $password)) {
+        return 'Password must contain at least one number.';
+    }
+    if (!preg_match('/[\W_]/', $password)) {
+        return 'Password must contain at least one special character.';
+    }
+    return '';
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Retrieve and sanitize input
     $username = htmlspecialchars(trim($_POST['username']));
@@ -18,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Check if account is locked
         if ($user['is_locked']) {
             // Replace echo statements with:
-            $error_message = urlencode('Your error message here');
+            $error_message = urlencode('Your account is locked due to too many failed login attempts.');
             header("Location: login.php?error=$error_message");
             exit;
         }
@@ -47,13 +67,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             $attempts_left = 3 - $failed_attempts;
             // Replace echo statements with:
-            $error_message = urlencode('Your error message here');
+            $error_message = urlencode('Invalid password. Please try again.');
             header("Location: login.php?error=$error_message");
             exit;
         }
     } else {
         // Replace echo statements with:
-        $error_message = urlencode('Your error message here');
+        $error_message = urlencode('Invalid username. Please try again.');
         header("Location: login.php?error=$error_message");
         exit;
     }
