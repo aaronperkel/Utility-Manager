@@ -98,7 +98,7 @@ if ($_SESSION['role'] !== 'Admin') {
                 <th class="spanTwoMobile">See Bill</th>
             </tr>
             <?php
-            $sql = 'SELECT pmkBillID, fldDate, fldItem, fldTotal, fldCost, fldDue, fldStatus, fldView, fldOwe FROM tblUtilities';
+            $sql = 'SELECT fldDate, fldItem, fldTotal, fldCost, fldDue, fldStatus, fldView, fldOwe FROM tblUtilities ORDER BY fldDate DESC';
             $statement = $pdo->prepare($sql);
             $statement->execute();
 
@@ -144,10 +144,10 @@ if ($_SESSION['role'] !== 'Admin') {
 
         <table>
         <form action="#" id="newEntry" method="POST" enctype="multipart/form-data">
-                <tr>
+                <tr class="addData">
                     <th colspan="7" class="spanTwoMobile">New Entry</th>
                 </tr>
-                <tr>
+                <tr class="addData">
                     <th>Date Billed</th>
                     <th>Item</th>
                     <th>Bill Total</th>
@@ -156,7 +156,7 @@ if ($_SESSION['role'] !== 'Admin') {
                     <th>Status</th>
                     <th class="spanTwoMobile">See Bill</th>
                 </tr>
-                <tr>
+                <tr class="addData">
                     <td><input type="date" id="date" name="date" required></td>
                     <td>
                         <select id="item" name="item" required>
@@ -178,7 +178,7 @@ if ($_SESSION['role'] !== 'Admin') {
                     </td>
                     <td class="spanTwoMobile"><input type="text" id="view" name="view" required></td>
                 </tr>
-                <tr>
+                <tr class="addData">
                     <td colspan="7" class="spanTwoMobile"><input type="submit" value="Submit"></td>
                 </tr>
             </form>
