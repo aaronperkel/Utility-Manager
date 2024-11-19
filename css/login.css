@@ -104,12 +104,21 @@ button:hover {
     background-color: #ffdddd!important
 }
 
+.pale-green {
+    color:#000!important;
+    background-color:#ddffdd!important;
+}
+
 .leftbar {
-    border-left: 4px solid #ccc!important
+    border-left: 4px solid #ccc!important;
 }
 
 .border-red {
-    border-color: #f44336!important
+    border-color: #f44336!important;
+}
+
+.border-green {
+    border-color:#4CAF50!important;
 }
 
 .options-container {

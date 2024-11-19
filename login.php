@@ -21,6 +21,11 @@
             echo '<p>' . htmlspecialchars($_GET['error']) . '</p>';
             echo '</div>';
         }
+        if (isset($_GET['message'])) {
+            echo '<div class="panel pale-green leftbar border-green">';
+            echo '<p>' . htmlspecialchars($_GET['message']) . '</p>';
+            echo '</div>';
+        }
         ?>
 
 

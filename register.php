@@ -16,9 +16,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt = $pdo->prepare($sql);
     try {
         $stmt->execute([$username, $password_hash, $salt]);
-        header('Location: login.php');
+        $message = 'User created succesfully!';
+        header("Location: login.php?message=$message");
     } catch (PDOException $e) {
-        echo 'Error: ' . $e->getMessage();
+        $error_message = 'There was an error creating your account.';
+        header("Location: login.php?error=$error_message");
     }
 }
 ?>
