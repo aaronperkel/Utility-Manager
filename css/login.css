@@ -87,11 +87,11 @@ button:hover {
 }
 
 .user {
-    background-image: url('../img/user.png');
+    background-image: url('../images/user.png');
 }
 
 .pass {
-    background-image: url('../img/lock.png');
+    background-image: url('../images/lock.png');
 }
 
 .panel {
