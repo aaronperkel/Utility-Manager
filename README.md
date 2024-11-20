@@ -15,25 +15,7 @@ This is a personal project of mine that is still under development. It is a port
 3. `.env`
 
 ### Setup Instructions
-I have the following inside of my `.htaccess` file:
-
-```
-RewriteEngine on
-
-RewriteCond %{THE_REQUEST} /([^.]+)\.php [NC]
-RewriteCond %{REQUEST_URI} !/update_status_paid\.php [NC]
-RewriteCond %{REQUEST_URI} !/update_status_unpaid\.php [NC]
-RewriteCond %{REQUEST_URI} !/send_reminder\.php [NC]
-RewriteRule ^ /%1 [NC,L,R]
-
-RewriteCond %{REQUEST_FILENAME}.php -f
-RewriteCond %{REQUEST_URI} !/update_status_paid\.php [NC]
-RewriteCond %{REQUEST_URI} !/update_status_unpaid\.php [NC]
-RewriteCond %{REQUEST_URI} !/send_reminder\.php [NC]
-RewriteRule ^ %{REQUEST_URI}.php [NC,L]
-```
-
-This is so that the web url does not end in `.php`. I also have the following environemnt variables in `.env`:
+I have the following environemnt variables in `.env`:
 
 ```
 DBNAME=name
