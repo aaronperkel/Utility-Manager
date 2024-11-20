@@ -1,5 +1,12 @@
 <?php include 'top.php';
 
+$peopleList = ['Aaron', 'Owen', 'Ben'];
+
+if ($_SESSION['role'] !== 'Admin') {
+    echo 'Access denied.';
+    exit;
+}
+
     $dataIsGood = false;
 
     $date = '';
@@ -80,57 +87,93 @@
         <h2>Admin Portal</h2>
         <table>
             <tr>
-                <th colspan="7" class="spanTwoMobile">Utilites</th>
-            </tr>
-            <tr>
                 <th>Date Billed</th>
                 <th>Item</th>
                 <th>Bill Total</th>
                 <th>Cost per Person</th>
                 <th>Due Date</th>
                 <th>Status</th>
-                <th class="spanTwoMobile">See Bill</th>
+                <th>See Bill</th>
             </tr>
             <?php
-            $sql = 'SELECT pmkBillID, fldDate, fldItem, fldTotal, fldCost, fldDue, fldStatus, fldView, fldOwe FROM tblUtilities';
+            // Fetch bills from the database
+            $sql = 'SELECT pmkBillID, fldDate, fldItem, fldTotal, fldCost, fldDue, fldStatus, fldView, fldOwe FROM tblUtilities ORDER BY fldDate DESC';
             $statement = $pdo->prepare($sql);
             $statement->execute();
 
             $cells = $statement->fetchAll();
-            
-            foreach($cells as $cell) {
-                print '<tr>';
-                print '<td class="hover">' . $cell['fldDate'] . '</td>';
-                print '<td class="hover">' . $cell['fldItem'] . '</td>';
-                print '<td class="hover">$' . $cell['fldTotal'] . '</td>';
-                print '<td class="hover">$' . $cell['fldCost'] . '</td>';
 
+            foreach ($cells as $cell) {
+                print '<tr class="hover">';
+                // Column 1: Date Billed
+                print '<td>' . htmlspecialchars($cell['fldDate']) . '</td>';
+                // Column 2: Item
+                print '<td>' . htmlspecialchars($cell['fldItem']) . '</td>';
+                // Column 3: Bill Total
+                print '<td>$' . htmlspecialchars($cell['fldTotal']) . '</td>';
+                // Column 4: Cost per Person
+                print '<td>$' . htmlspecialchars($cell['fldCost']) . '</td>';
+                // Column 5: Due Date
+                print '<td>' . htmlspecialchars($cell['fldDue']);
+
+                // If the bill is unpaid, include the 'Send Reminder' form in the Due Date cell
+                if ($cell['fldStatus'] !== "Paid") {
+                    print '<form method="POST" action="php/send_reminder.php" class="status-action-form">';
+                    print '<input type="hidden" name="pmk" value="' . htmlspecialchars($cell['pmkBillID']) . '">';
+                    print '<input type="submit" name="sendReminder" class="paidButton" value="Send Reminder">';
+                    print '</form>';
+                }
+                print '</td>';
+
+                // Column 6: Status
                 if ($cell['fldStatus'] == "Paid") {
-                    print '<td class="hover">' . $cell['fldDue'] . '</td>';
-                    print '<td class="paid">' . $cell['fldStatus'];
-                    print '<form method="POST" action="update_status_unpaid.php">';
-                    print '<input type="hidden" name="id" value="' . $cell['pmkBillID'] . '">';
+                    // Display 'Paid' status and option to mark as unpaid
+                    print '<td class="paid">' . htmlspecialchars($cell['fldStatus']);
+                    print '<form method="POST" action="php/update_status_unpaid.php">';
+                    print '<input type="hidden" name="id" value="' . htmlspecialchars($cell['pmkBillID']) . '">';
                     print '<input type="submit" name="updateStatus" class="paidButton" value="Mark as Unpaid">';
                     print '</form></td>';
                 } else {
-                    print '<td class="hover">' . $cell['fldDue'];
-                    print '<form method="POST" action="send_reminder.php">';
-                    print '<input type="hidden" name="pmk" value="' . $cell['pmkBillID'] . '">';
-                    print '<input type="submit" name="sendReminder" class="paidButton" value="Send Reminder" style="margin-top:6px">';
-                    print '</form></td>';
+                    // Display checkboxes for unpaid bills
                     print '<td class="notPaid">';
+                    $owedPeople = array_map('trim', explode(',', $cell['fldOwe']));
 
-                    print '<form method="POST" action="update_owe.php">';
-                    print '<input type="hidden" name="id2" value="' . $cell['pmkBillID'] . '">';
-                    print '<input type="text" name="updateNames" value="'. $cell['fldOwe'] . '">';
+                    // Start the form for updating owed names
+                    print '<form method="POST" action="php/update_owe.php" class="status-form">';
+                    print '<input type="hidden" name="id2" value="' . htmlspecialchars($cell['pmkBillID']) . '">';
+
+                    // Container for checkboxes
+                    print '<div class="checkbox-container">';
+
+                    foreach ($peopleList as $person) {
+                        $isChecked = !in_array($person, $owedPeople) ? 'checked' : '';
+                        $personId = 'person_' . $cell['pmkBillID'] . '_' . strtolower($person);
+                        print '<label class="checkbox-label" for="' . htmlspecialchars($personId) . '">';
+                        print '<input type="checkbox" id="' . htmlspecialchars($personId) . '" name="paidPeople[]" value="' . htmlspecialchars($person) . '" ' . $isChecked . '> ';
+                        if ($isChecked) {
+                            print '<span class="paid">';
+                        } else {
+                            print '<span class="notPaid">';
+                        }
+                        print htmlspecialchars($person) . '</span>';
+                        print '</label>';
+                    }
+
+                    print '</div>'; // Close checkbox-container
+
+                    // Submit button for updating names
+                    print '<input type="submit" name="updateNames" class="paidButton" value="Update">';
                     print '</form>';
 
-                    print '<form method="POST" action="update_status_paid.php">';
-                    print '<input type="hidden" name="id" value="' . $cell['pmkBillID'] . '">';
+                    // Form to mark entire bill as paid
+                    print '<form method="POST" action="php/update_status_paid.php" class="status-action-form">';
+                    print '<input type="hidden" name="id" value="' . htmlspecialchars($cell['pmkBillID']) . '">';
                     print '<input type="submit" name="updateStatus" class="paidButton" value="Mark as Paid">';
                     print '</form></td>';
                 }
-                print '<td class="hover spanTwoMobile"><a href=' . $cell['fldView'] . ' target="_blank">PDF</a>&nbsp;&nbsp;<a href="' . $cell['fldView'] . '" download><img alt="download button" src="images/dl.png" width="20" class="zoom"></a></td>';
+
+                // Column 7: See Bill
+                print '<td class="hover"><a href="' . htmlspecialchars($cell['fldView']) . '" target="_blank">PDF</a>&nbsp;&nbsp;<a href="' . htmlspecialchars($cell['fldView']) . '" download><img alt="download button" src="images/dl.png" width="20" class="zoom"></a></td>';
                 print '</tr>';
             }
             ?>
@@ -138,10 +181,10 @@
 
         <table>
         <form action="#" id="newEntry" method="POST" enctype="multipart/form-data">
-                <tr>
+                <tr class="addData">
                     <th colspan="7" class="spanTwoMobile">New Entry</th>
                 </tr>
-                <tr>
+                <tr class="addData">
                     <th>Date Billed</th>
                     <th>Item</th>
                     <th>Bill Total</th>
@@ -150,7 +193,7 @@
                     <th>Status</th>
                     <th class="spanTwoMobile">See Bill</th>
                 </tr>
-                <tr>
+                <tr class="addData">
                     <td><input type="date" id="date" name="date" required></td>
                     <td>
                         <select id="item" name="item" required>
@@ -172,7 +215,7 @@
                     </td>
                     <td class="spanTwoMobile"><input type="text" id="view" name="view" required></td>
                 </tr>
-                <tr>
+                <tr class="addData">
                     <td colspan="7" class="spanTwoMobile"><input type="submit" value="Submit"></td>
                 </tr>
             </form>

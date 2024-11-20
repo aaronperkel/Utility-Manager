@@ -18,7 +18,7 @@ if (isset($_POST['sendReminder'])) {
 
     $owedString = implode(',', $owed);
     
-    $command = escapeshellcmd('./venv/bin/python3 send_reminder.py "' . $result['fldDue'] . '" [' . $owedString . ']');
+    $command = escapeshellcmd('python3 ../python/send_reminder.py "' . $result['fldDue'] . '" [' . $owedString . ']');
     $output = shell_exec($command);
 
     header('Location: ' . $_SERVER['HTTP_REFERER']);
