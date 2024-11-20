@@ -52,7 +52,7 @@ def check_bills():
     now = datetime.datetime.now()
     print(now.strftime("%m/%d/%Y %H:%M:%S"))
 
-    ssl_args = {'ssl': {'ca': 'webdb-cacert.pem'}}
+    ssl_args = {'ssl': {'ca': '../../webdb-cacert.pem'}}
     db_engine = create_engine(
             'mysql://' + os.getenv('DBUSER') + ':' + os.getenv('DBPASS') + '@webdb.uvm.edu/' + os.getenv('DBNAME'),
             connect_args=ssl_args)
@@ -181,7 +181,6 @@ def confirm(recip, sub, msg):
         server.sendmail(sender_email, msg['To'], msg.as_string())
 
 def new_bill():
-
     sender_email = 'aaron.perkel@icloud.com'
     sender = 'me@aaronperkel.com'
     sender_password = os.getenv('EMAIL_PASS')

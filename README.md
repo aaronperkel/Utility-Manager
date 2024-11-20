@@ -17,7 +17,7 @@ This is a personal project of mine that is still under development. It is a port
 ### Setup Instructions
 I have the following environemnt variables in `.env`:
 
-```
+```bash
 DBNAME=name
 DBUSER=username
 DBPASS=password
