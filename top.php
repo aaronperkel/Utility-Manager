@@ -1,6 +1,11 @@
 <?php
 $phpSelf = htmlspecialchars($_SERVER['PHP_SELF']);
 $pathParts = pathinfo($phpSelf);
+session_start();
+if (!isset($_SESSION['username'])) {
+    header('Location: login.php');
+    exit;
+}
 ?>
 <!DOCTYPE HTML>
 <html lang="en">
@@ -29,7 +34,7 @@ $pathParts = pathinfo($phpSelf);
     <?php
     print '<body class="' . $pathParts['filename'] . '">';
     print '<!-- #################   Body element    ################# -->';
-    include 'connect-DB.php';
+    include 'php/connect-DB.php';
     include 'header.php';
     include 'nav.php';
     ?>

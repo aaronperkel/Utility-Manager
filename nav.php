@@ -1,14 +1,20 @@
-    <nav>
-        <a class="<?php
-        if ($pathParts['filename'] == "index") {
-            print 'activePage';
-        }
-        ?>" href="/utilities">Home</a>
+<!-- nav.php -->
+<nav>
+    <?php
+    session_start();
+    if (isset($_SESSION['username'])) {
+        echo '<a href="index.php">Home</a>';
 
-        <a class="<?php
-        if ($pathParts['filename'] == "portal") {
-            print 'activePage';
+        // Check if the user's role is 'Admin'
+        if ($_SESSION['role'] === 'Admin') {
+            echo '<a href="portal.php">Admin Portal</a>';
         }
-        ?>" href="/utilities/portal.php">Admin Portal</a>
-    </nav>
+
+        echo '<a href="logout.php">Logout (' . htmlspecialchars($_SESSION['username']) . ')</a>';
+    } else {
+        echo '<a href="login.php">Login</a>';
+        echo '<a href="register.php">Register</a>';
+    }
+    ?>
+</nav>
 </div>
