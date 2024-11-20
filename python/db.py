@@ -38,7 +38,10 @@ def get_email_body(num, date):
     81 Buell Utilities</span><br>
     P: (478)262-8935 | E: me@aaronperkel.com</p>"""
 
-    reminder = """"""
+    reminder = """
+    <p style="font: 14pt serif;">81 Buell Utilities has finished updating to V2.0.</p>
+    <p style="font: 14pt serif;">Please login to 81 Buell Utilities and REGISTER as a new account. You will use this username and password to log in going forward.</p>
+    <p style="font: 14pt serif;">Please contact me if you notice any bugs or problems using the website.</p>"""
 
     body += reminder
 
@@ -52,7 +55,7 @@ def check_bills():
     now = datetime.datetime.now()
     print(now.strftime("%m/%d/%Y %H:%M:%S"))
 
-    ssl_args = {'ssl': {'ca': '../../webdb-cacert.pem'}}
+    ssl_args = {'ssl': {'ca': '../../../webdb-cacert.pem'}}
     db_engine = create_engine(
             'mysql://' + os.getenv('DBUSER') + ':' + os.getenv('DBPASS') + '@webdb.uvm.edu/' + os.getenv('DBNAME'),
             connect_args=ssl_args)
