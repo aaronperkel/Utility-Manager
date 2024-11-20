@@ -94,6 +94,7 @@ if ($_SESSION['role'] !== 'Admin') {
                 <th>Due Date</th>
                 <th>Status</th>
                 <th>See Bill</th>
+                <!-- TODO: Add delete button next to each bill -->
             </tr>
             <?php
             // Fetch bills from the database
