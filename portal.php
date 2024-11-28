@@ -78,8 +78,8 @@ if ($_SESSION['role'] !== 'Admin') {
 
     if ($dataIsGood) {
         $statement->execute($data);
-        include "update_ics.php";
-        $command = escapeshellcmd('python new_bill.py');
+        include "php/update_ics.php";
+        $command = escapeshellcmd('python python/new_bill.py');
         $output = shell_exec($command);
     }
     ?>
