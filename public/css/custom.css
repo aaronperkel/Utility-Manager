@@ -85,6 +85,10 @@ header a:hover {
     text-decoration: underline;
 }
 
+table a:hover {
+    text-decoration: underline;
+}
+
 main,
 footer {
     background-color: var(--sec-bg-color);
