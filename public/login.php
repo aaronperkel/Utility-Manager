@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>Login - 81 Buell Utilities</title>
     <link rel="stylesheet" type="text/css" href="css/login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 
 <body>
@@ -30,8 +31,14 @@
 
 
         <form method="post" action="authenticate.php">
-            <input class="user" type="text" name="username" placeholder="Username" required><br>
-            <input class="pass" type="password" name="password" placeholder="Password" required><br>
+            <div class="input-container">
+                <i class="fa fa-user icon" style="color:black;"></i>
+                <input class="user-input" type="text" name="username" placeholder="Username" required>
+            </div>
+            <div class="input-container">
+                <i class="fa fa-lock icon" style="color:black;"></i>
+                <input class="pass-input" type="password" name="password" placeholder="Password" required>
+            </div>
             <button type="submit">Login</button>
         </form>
     </main>
