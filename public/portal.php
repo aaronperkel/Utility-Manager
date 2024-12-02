@@ -15,6 +15,7 @@ if ($_SESSION['role'] !== 'Admin') {
     $cost = '';
     $due =  '';
     $status = '';
+    $uploadDir = 'Bills/';
 
     function getData($field) {
         if (!isset($_POST[$field])) {
@@ -37,11 +38,11 @@ if ($_SESSION['role'] !== 'Admin') {
     $cost = (string) $cost;
 
     if ($item == "Gas") {
-        $uploadDir = 'Bills/Gas/';
+        $uploadDir += 'Gas/';
     } elseif ($item == "Electric") {
-        $uploadDir = 'Bills/Electric/';
+        $uploadDir += 'Electric/';
     } elseif ($item == "Internet") {
-        $uploadDir = 'Bills/Internet/';
+        $uploadDir += 'Internet/';
     }
 
     $filePath = $uploadDir . getData('view');

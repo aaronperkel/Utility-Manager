@@ -1,7 +1,7 @@
 <!-- authenticate.php -->
 <?php
 session_start();
-include 'php/connect-DB.php';
+include '../app/connect-DB.php';
 
 // Password validation function
 function validate_password($password) {
