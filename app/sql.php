@@ -5,16 +5,17 @@ include '../top.php';
     <p>Create Table SQL</p>
 
     <pre>
-    CREATE TABLE tblUtilities(
-    pmkBillID int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    fldDate VARCHAR(50) DEFAULT NULL,
-    fldItem VARCHAR(50) DEFAULT NULL,
-    fldTotal VARCHAR(50) DEFAULT NULL,
-    fldCost VARCHAR(50) DEFAULT NULL,
-    fldDue VARCHAR(50) DEFAULT NULL,
-    fldStatus VARCHAR(50) DEFAULT NULL,
-    fldView VARCHAR(150) DEFAULT NULL
-    )
+    CREATE TABLE tblUtilities (
+        pmkBillID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        fldDate VARCHAR(50) DEFAULT NULL,
+        fldItem VARCHAR(50) DEFAULT NULL,
+        fldTotal VARCHAR(50) DEFAULT NULL,
+        fldCost VARCHAR(50) DEFAULT NULL,
+        fldDue VARCHAR(50) DEFAULT NULL,
+        fldStatus VARCHAR(50) DEFAULT NULL,
+        fldView VARCHAR(150) DEFAULT NULL,
+        fldOwe VARCHAR(150) DEFAULT NULL
+    );
     </pre>
 
     <h2>Insert records into the table</h2>
