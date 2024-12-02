@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Login - 81 Buell Utilities</title>
+    <link rel="icon" href="favicon.ico">
     <link rel="stylesheet" type="text/css" href="css/login.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
