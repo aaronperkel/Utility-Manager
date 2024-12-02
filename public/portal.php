@@ -174,7 +174,9 @@ if ($_SESSION['role'] !== 'Admin') {
                 }
 
                 // Column 7: See Bill
-                print '<td class="hover"><a href="' . htmlspecialchars($cell['fldView']) . '" target="_blank">PDF</a>&nbsp;&nbsp;<a href="' . htmlspecialchars($cell['fldView']) . '" download><img alt="download button" src="images/dl.png" width="20" class="zoom"></a></td>';
+                print '<td class="spanTwoMobile hover"><a href=' . $cell['fldView'] . ' target="_blank">PDF</a>';
+                print '&nbsp&nbsp<a href="' . $cell['fldView'] . '" download>';
+                print '<i class="fa fa-download icon zoom" style="font-size:20px"></i></a></td>';
                 print '</tr>';
             }
             ?>
