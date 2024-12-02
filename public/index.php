@@ -38,7 +38,9 @@
                     print '<div class="tooltip">' . $cell['fldStatus'] . '<span class="tooltiptext">Unpaid: ' . $cell['fldOwe'] . '</span></div>';
                     print '</td>';
                 }
-                print '<td class="spanTwoMobile hover"><a href=' . $cell['fldView'] . ' target="_blank">PDF</a>&nbsp&nbsp<a href="' . $cell['fldView'] . '" download><img src="images/dl.png" width="20" class="zoom"></a></td>';
+                print '<td class="spanTwoMobile hover"><a href=' . $cell['fldView'] . ' target="_blank">PDF</a>';
+                print '&nbsp&nbsp<a href="' . $cell['fldView'] . '" download>';
+                print '<i class="fa fa-download icon zoom" style="font-size:20px"></i></a></td>';
                 print '</tr>';
             }
             ?>
