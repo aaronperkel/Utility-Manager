@@ -34,7 +34,7 @@ if (!isset($_SESSION['username'])) {
     <?php
     print '<body class="' . $pathParts['filename'] . '">';
     print '<!-- #################   Body element    ################# -->';
-    include 'php/connect-DB.php';
+    include '../app/connect-DB.php';
     include 'header.php';
     include 'nav.php';
     ?>

@@ -1,6 +1,34 @@
-.htaccess
+# Ignore system files and directories
 .DS_Store
-Bills/
-.env
-__pycache__/
-.ipynb_checkpoints/
+Thumbs.db
+
+# Ignore Composer's vendor directory (PHP dependencies)
+vendor/
+
+# Ignore environment configuration files (contains sensitive data)
+config/.env
+
+# Ignore bills PDFs and other uploaded files (potentially sensitive and large)
+public/Bills/
+
+# Ignore Python cache and compiled files
+scripts/__pycache__/
+scripts/*.pyc
+
+# Ignore log files (if any)
+*.log
+
+# Ignore temporary or backup files
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# Ignore IDE or editor-specific files
+.vscode/
+.idea/
+*.code-workspace
+
+# Ignore node_modules if you have any Node.js dependencies (optional)
+node_modules/
