@@ -4,3 +4,4 @@ Bills/
 .env
 __pycache__/
 .ipynb_checkpoints/
+/vendor/
