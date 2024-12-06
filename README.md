@@ -123,4 +123,4 @@ This is a personal project, but if you’d like to contribute:
 3.	Submit a pull request with a detailed description of your changes.
 
 ## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE.md) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
