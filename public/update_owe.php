@@ -1,5 +1,5 @@
 <?php
-include 'connect-DB.php';
+include '../app/connect-DB.php';
 
 if (isset($_POST['updateNames'])) {
     $id = htmlspecialchars($_POST['id2']);
@@ -24,6 +24,8 @@ if (isset($_POST['updateNames'])) {
     }
     $statement = $pdo->prepare($sql);
     $statement->execute([$id]);
+
+    include 'update_ics.php';
 
     // Redirect back to the portal page
     header('Location: ' . $_SERVER['HTTP_REFERER']);
