@@ -30,7 +30,7 @@ def get_email_body(num, date):
     body += """
     <p style="font: 14pt serif;">
         Please login to
-        <a href="https://aperkel.w3.uvm.edu/utilities">81 Buell Utilities</a>
+        <a href="https://utilities.w3.uvm.edu">81 Buell Utilities</a>
         for more info.
     </p>
     <p style="font: 14pt serif;">
@@ -162,7 +162,7 @@ def confirm(recip, sub, msg):
     sender_password = os.getenv('EMAIL_PASS')
     subject = 'Mail Sent'
 
-    body = '<p style="font: 12pt monospace;">An email was just sent via aperkel.w3.uvm.edu/utilities.</p>'
+    body = '<p style="font: 12pt monospace;">An email was just sent via utilities.w3.uvm.edu.</p>'
 
     body += '<hr>'
     
