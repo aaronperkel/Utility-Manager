@@ -4,15 +4,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $body = escapeshellarg($_POST['body']);
     $command = "python3 ../scripts/send_custom_email.py $subject $body";
     shell_exec($command);
-    header('Location: portal.php?message=Email+Sent');
+    header('Location: portal.php');
     exit;
 }
-?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head><title>Send Custom Email</title></head>
-<body>
+include 'top.php';
+?>
     <form method="POST">
         <label>Subject:</label><br>
         <input type="text" name="subject" required><br><br>
@@ -20,5 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <textarea name="body" required></textarea><br><br>
         <button type="submit">Send Email</button>
     </form>
-</body>
-</html>
+
+<?php
+include 'footer.php';
+?>

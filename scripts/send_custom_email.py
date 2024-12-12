@@ -3,19 +3,44 @@ import smtplib
 from email.mime.text import MIMEText
 import os
 from dotenv import load_dotenv
+from db import confirm
 
-load_dotenv()
+load_dotenv('/users/a/p/aperkel/www-root/utilities/config/.env')
 
 subject = sys.argv[1]
 body_text = sys.argv[2]
 
+body_text = '<p style="font: 14pt sefif;">' + body_text
+body_text = body_text.replace('\n\n', '</p><br><p style="font: 14pt sefif;">')
+body_text += '</p>'
+body_text += """
+<p style="font: 14pt serif;">
+<span style="color: green;">
+81 Buell Utilities</span><br>
+P: (478)262-8935 | E: me@aaronperkel.com</p>
+"""
+
+#    body += """
+#     <p style="font: 14pt serif;">
+#         Please login to
+#         <a href="https://utilities.w3.uvm.edu">81 Buell Utilities</a>
+#         for more info.
+#     </p>
+#     <p style="font: 14pt serif;">
+#     <span style="color: green;">
+#     81 Buell Utilities</span><br>
+#     P: (478)262-8935 | E: me@aaronperkel.com</p>"""
+
 sender_email = 'aaron.perkel@icloud.com'
+sender = 'me@aaronperkel.com'
 sender_password = os.getenv('EMAIL_PASS')
 recipients = ['aperkel@uvm.edu']
 
+print("Email password:", sender_password)
+
 msg = MIMEText(body_text, 'html')
 msg['Subject'] = subject
-msg['From'] = '81 Buell Utilities <' + sender_email + '>'
+msg['From'] = '81 Buell Utilities <' + sender + '>'
 msg['To'] = ', '.join(recipients)
 
 with smtplib.SMTP('smtp.mail.me.com', 587) as server:
