@@ -25,6 +25,7 @@ body {
     max-width: 1200px;
     text-align: center;
     margin-top: 2%;
+
 }
 
 body.login {
@@ -161,6 +162,7 @@ select {
     background-size: 22px;
     background-repeat: no-repeat;
     padding: 4px 10px 4px 18px;
+
 }
 
 input[type="text"].user {
@@ -392,4 +394,17 @@ td input[type="submit"] {
 
 .hover:hover {
     background-color: lightblue;
+}
+
+.send_custom_email input[type=text] {
+    width: 10%;
+}
+
+.send_custom_email textarea {
+    height: 150px;
+    width: 450px;
+    border: 2px solid #555;
+    border-radius: 4px;
+    font-size: 20px;
+    padding: 4px 10px 4px 18px;
 }

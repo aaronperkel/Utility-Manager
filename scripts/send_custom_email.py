@@ -3,16 +3,21 @@ import smtplib
 from email.mime.text import MIMEText
 import os
 from dotenv import load_dotenv
-from db import confirm
 
 load_dotenv('/users/a/p/aperkel/www-root/utilities/config/.env')
 
 subject = sys.argv[1]
 body_text = sys.argv[2]
 
-body_text = '<p style="font: 14pt sefif;">' + body_text
-body_text = body_text.replace('\n\n', '</p><br><p style="font: 14pt sefif;">')
-body_text += '</p>'
+paragraphs = body_text.strip().split("\n\n")
+html_paragraphs = []
+
+for p in paragraphs:
+    p = p.replace('\n', '<br>')
+    html_paragraphs.append(f"<p style=\"font: 14pt serif;\">{p}</p>")
+
+body_text = "".join(html_paragraphs)
+
 body_text += """
 <p style="font: 14pt serif;">
 <span style="color: green;">
@@ -20,21 +25,10 @@ body_text += """
 P: (478)262-8935 | E: me@aaronperkel.com</p>
 """
 
-#    body += """
-#     <p style="font: 14pt serif;">
-#         Please login to
-#         <a href="https://utilities.w3.uvm.edu">81 Buell Utilities</a>
-#         for more info.
-#     </p>
-#     <p style="font: 14pt serif;">
-#     <span style="color: green;">
-#     81 Buell Utilities</span><br>
-#     P: (478)262-8935 | E: me@aaronperkel.com</p>"""
-
 sender_email = 'aaron.perkel@icloud.com'
 sender = 'me@aaronperkel.com'
 sender_password = os.getenv('EMAIL_PASS')
-recipients = ['aperkel@uvm.edu']
+recipients = ['aperkel@uvm.edu', 'oacook@uvm.edu', 'bquacken@uvm.edu']
 
 print("Email password:", sender_password)
 
