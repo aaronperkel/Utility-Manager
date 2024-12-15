@@ -31,7 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Register - 81 Buell Utilties</title>
+    <link rel="icon" href="favicon.ico">
     <link rel="stylesheet" type="text/css" href="css/login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 
 <body>
@@ -48,13 +50,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             echo '<p>' . htmlspecialchars($_GET['error']) . '</p>';
             echo '</div>';
         }
+        if (isset($_GET['message'])) {
+            echo '<div class="panel pale-green leftbar border-green">';
+            echo '<p>' . htmlspecialchars($_GET['message']) . '</p>';
+            echo '</div>';
+        }
         ?>
 
         <form method="post" action="register.php">
+            <div class="input-container">
+                <i class="fa fa-user icon" style="color:black;"></i>
+                <input class="user-input" type="text" name="username" placeholder="Username" required>
+            </div>
+            <div class="input-container">
+                <i class="fa fa-lock icon" style="color:black;"></i>
+                <input class="pass-input" type="password" name="password" placeholder="Password" required>
+            </div>
+            <button type="submit">Register</button>
+        </form>
+
+        <!--<form method="post" action="register.php">
             <input class="user" type="text" name="username" placeholder="Username" required><br>
             <input class="pass" type="password" name="password" placeholder="Password" required><br>
             <button type="submit">Register</button>
-        </form>
+        </form>-->
     </main>
 
     <footer>
