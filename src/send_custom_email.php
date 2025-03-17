@@ -1,8 +1,21 @@
 <?php
+
+session_start();
+if (!isset($_SESSION['username'])) {
+    header('Location: login.php');
+    exit;
+}
+
+
+if ($_SESSION['role'] !== 'Admin') {
+    echo 'Access denied.';
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $subject = escapeshellarg($_POST['subject']);
     $body = escapeshellarg($_POST['body']);
-    $command = "python3 ../scripts/send_custom_email.py $subject $body";
+    $command = "python3 scripts/send_custom_email.py $subject $body";
     shell_exec($command);
     header('Location: portal.php');
     exit;

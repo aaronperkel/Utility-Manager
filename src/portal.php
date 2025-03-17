@@ -1,5 +1,8 @@
 <?php include 'top.php';
 
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 $peopleList = ['Aaron', 'Owen', 'Ben'];
 
 if ($_SESSION['role'] !== 'Admin') {
@@ -15,7 +18,7 @@ if ($_SESSION['role'] !== 'Admin') {
     $cost = '';
     $due =  '';
     $status = '';
-    $uploadDir = 'Bills/';
+    $uploadDir = 'public/';
 
     function getData($field) {
         if (!isset($_POST[$field])) {
@@ -38,11 +41,11 @@ if ($_SESSION['role'] !== 'Admin') {
     $cost = (string) $cost;
 
     if ($item == "Gas") {
-        $uploadDir += 'Gas/';
+        $uploadDir = $uploadDir . 'Gas/';
     } elseif ($item == "Electric") {
-        $uploadDir += 'Electric/';
+        $uploadDir = $uploadDir . 'Electric/';
     } elseif ($item == "Internet") {
-        $uploadDir += 'Internet/';
+        $uploadDir = $uploadDir . 'Internet/';
     }
 
     $filePath = $uploadDir . getData('view');
@@ -80,7 +83,7 @@ if ($_SESSION['role'] !== 'Admin') {
     if ($dataIsGood) {
         $statement->execute($data);
         include "update_ics.php";
-        $command = escapeshellcmd('python new_bill.py');
+        $command = escapeshellcmd('python scripts/new_bill.py');
         $output = shell_exec($command);
     }
     ?>
@@ -119,7 +122,7 @@ if ($_SESSION['role'] !== 'Admin') {
 
                 // If the bill is unpaid, include the 'Send Reminder' form in the Due Date cell
                 if ($cell['fldStatus'] !== "Paid") {
-                    print '<form method="POST" action="php/send_reminder.php" class="status-action-form">';
+                    print '<form method="POST" action="send_reminder.php" class="status-action-form">';
                     print '<input type="hidden" name="pmk" value="' . htmlspecialchars($cell['pmkBillID']) . '">';
                     print '<input type="submit" name="sendReminder" class="paidButton" value="Send Reminder">';
                     print '</form>';
@@ -130,7 +133,7 @@ if ($_SESSION['role'] !== 'Admin') {
                 if ($cell['fldStatus'] == "Paid") {
                     // Display 'Paid' status and option to mark as unpaid
                     print '<td class="paid">' . htmlspecialchars($cell['fldStatus']);
-                    print '<form method="POST" action="php/update_status_unpaid.php">';
+                    print '<form method="POST" action="update_status_unpaid.php">';
                     print '<input type="hidden" name="id" value="' . htmlspecialchars($cell['pmkBillID']) . '">';
                     print '<input type="submit" name="updateStatus" class="paidButton" value="Mark as Unpaid">';
                     print '</form></td>';
@@ -140,7 +143,7 @@ if ($_SESSION['role'] !== 'Admin') {
                     $owedPeople = array_map('trim', explode(',', $cell['fldOwe']));
 
                     // Start the form for updating owed names
-                    print '<form method="POST" action="php/update_owe.php" class="status-form">';
+                    print '<form method="POST" action="update_owe.php" class="status-form">';
                     print '<input type="hidden" name="id2" value="' . htmlspecialchars($cell['pmkBillID']) . '">';
 
                     // Container for checkboxes
@@ -167,7 +170,7 @@ if ($_SESSION['role'] !== 'Admin') {
                     print '</form>';
 
                     // Form to mark entire bill as paid
-                    print '<form method="POST" action="php/update_status_paid.php" class="status-action-form">';
+                    print '<form method="POST" action="update_status_paid.php" class="status-action-form">';
                     print '<input type="hidden" name="id" value="' . htmlspecialchars($cell['pmkBillID']) . '">';
                     print '<input type="submit" name="updateStatus" class="paidButton" value="Mark as Paid">';
                     print '</form></td>';

@@ -1,6 +1,6 @@
 <!-- register.php -->
 <?php
-include '../app/connect-DB.php';
+include 'app/connect-DB.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Retrieve and sanitize input
@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 ?>
 
+<!-- login.php -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,20 +43,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </header>
 
     <main>
+        <!-- Add this PHP block within the <main> tag in login.php -->
         <?php
         if (isset($_GET['error'])) {
             echo '<div class="panel pale-red leftbar border-red">';
             echo '<p>' . htmlspecialchars($_GET['error']) . '</p>';
             echo '</div>';
         }
-        if (isset($_GET['message'])) {
+		if (isset($_GET['message'])) {
             echo '<div class="panel pale-green leftbar border-green">';
             echo '<p>' . htmlspecialchars($_GET['message']) . '</p>';
             echo '</div>';
         }
+        ?>
 
-        /*
-        <form method="post" action="register.php">
+    <!-- if new users -->
+        <!-- <form method="post" action="register.php">
             <div class="input-container">
                 <i class="fa fa-user icon" style="color:black;"></i>
                 <input class="user-input" type="text" name="username" placeholder="Username" required>
@@ -65,14 +68,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <input class="pass-input" type="password" name="password" placeholder="Password" required>
             </div>
             <button type="submit">Register</button>
-        </form>
-        */
-        ?>
+        </form> -->
+   
 
+
+    <!-- if no new users -->
+    
         <div class="panel pale-red leftbar border-red">
             <p>We are currently not accepting new users.</p><br>
             <p>Please contact <a href="mailto:me@aaronperkel.com">me@aaronperkel.com</a> for help.</p>
         </div>
+   
+
     </main>
 
     <footer>

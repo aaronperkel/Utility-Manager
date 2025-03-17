@@ -4,7 +4,7 @@ from email.mime.text import MIMEText
 import os
 from dotenv import load_dotenv
 
-load_dotenv('/users/a/p/aperkel/www-root/utilities/config/.env')
+load_dotenv('/users/a/p/aperkel/utilities.aperkel.w3.uvm.edu-root/config/.env')
 
 subject = sys.argv[1]
 body_text = sys.argv[2]

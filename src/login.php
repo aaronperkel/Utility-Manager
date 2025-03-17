@@ -30,6 +30,7 @@
         }
         ?>
 
+
         <form method="post" action="authenticate.php">
             <div class="input-container">
                 <i class="fa fa-user icon" style="color:black;"></i>

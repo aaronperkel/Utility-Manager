@@ -1,5 +1,5 @@
 <?php
-include '../app/connect-DB.php';
+include 'app/connect-DB.php';
 
 if (isset($_POST['updateNames'])) {
     $id = htmlspecialchars($_POST['id2']);

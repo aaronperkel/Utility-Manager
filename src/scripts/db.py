@@ -8,7 +8,7 @@ import schedule
 import time 
 import os
 
-load_dotenv()
+load_dotenv('/users/a/p/aperkel/utilities.aperkel.w3.uvm.edu-root/config/.env')
 
 dates = []
 people = []
@@ -30,7 +30,7 @@ def get_email_body(num, date):
     body += """
     <p style="font: 14pt serif;">
         Please login to
-        <a href="https://utilities.w3.uvm.edu">81 Buell Utilities</a>
+        <a href="https://utilities.aperkel.w3.uvm.edu">81 Buell Utilities</a>
         for more info.
     </p>
     <p style="font: 14pt serif;">
@@ -38,10 +38,7 @@ def get_email_body(num, date):
     81 Buell Utilities</span><br>
     P: (478)262-8935 | E: me@aaronperkel.com</p>"""
 
-    reminder = """
-    <p style="font: 14pt serif;">81 Buell Utilities has finished updating to V2.0.</p>
-    <p style="font: 14pt serif;">Please login to 81 Buell Utilities and REGISTER as a new account. You will use this username and password to log in going forward.</p>
-    <p style="font: 14pt serif;">Please contact me if you notice any bugs or problems using the website.</p>"""
+    reminder = """"""
 
     body += reminder
 
@@ -55,7 +52,7 @@ def check_bills():
     now = datetime.datetime.now()
     print(now.strftime("%m/%d/%Y %H:%M:%S"))
 
-    ssl_args = {'ssl': {'ca': '../../../webdb-cacert.pem'}}
+    ssl_args = {'ssl': {'ca': '../../webdb-cacert.pem'}}
     db_engine = create_engine(
             'mysql://' + os.getenv('DBUSER') + ':' + os.getenv('DBPASS') + '@webdb.uvm.edu/' + os.getenv('DBNAME'),
             connect_args=ssl_args)
@@ -162,7 +159,7 @@ def confirm(recip, sub, msg):
     sender_password = os.getenv('EMAIL_PASS')
     subject = 'Mail Sent'
 
-    body = '<p style="font: 12pt monospace;">An email was just sent via utilities.w3.uvm.edu.</p>'
+    body = '<p style="font: 12pt monospace;">An email was just sent via utilities.aperkel.w3.uvm.edu.</p>'
 
     body += '<hr>'
     

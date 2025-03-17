@@ -9,7 +9,7 @@ vendor/
 config/.env
 
 # Ignore bills PDFs and other uploaded files (potentially sensitive and large)
-public/Bills/
+public/
 
 # Ignore Python cache and compiled files
 scripts/__pycache__/

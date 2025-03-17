@@ -1,5 +1,5 @@
 <?php
-include '../app/connect-DB.php';
+include 'app/connect-DB.php';
 
 if (isset($_POST['sendReminder'])) {
     $id = htmlspecialchars($_POST['pmk']);
@@ -18,7 +18,7 @@ if (isset($_POST['sendReminder'])) {
 
     $owedString = implode(',', $owed);
     
-    $command = escapeshellcmd('python3 ../python/send_reminder.py "' . $result['fldDue'] . '" [' . $owedString . ']');
+    $command = escapeshellcmd('python3 ./scripts/send_reminder.py "' . $result['fldDue'] . '" [' . $owedString . ']');
     $output = shell_exec($command);
 
     header('Location: ' . $_SERVER['HTTP_REFERER']);
