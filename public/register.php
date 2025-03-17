@@ -1,6 +1,6 @@
 <!-- register.php -->
 <?php
-include 'php/connect-DB.php';
+include '../app/connect-DB.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Retrieve and sanitize input
@@ -25,7 +25,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 ?>
 
-<!-- login.php -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -43,7 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </header>
 
     <main>
-        <!-- Add this PHP block within the <main> tag in login.php -->
         <?php
         if (isset($_GET['error'])) {
             echo '<div class="panel pale-red leftbar border-red">';
@@ -55,8 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             echo '<p>' . htmlspecialchars($_GET['message']) . '</p>';
             echo '</div>';
         }
-        ?>
 
+        /*
         <form method="post" action="register.php">
             <div class="input-container">
                 <i class="fa fa-user icon" style="color:black;"></i>
@@ -68,12 +66,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
             <button type="submit">Register</button>
         </form>
+        */
+        ?>
 
-        <!--<form method="post" action="register.php">
-            <input class="user" type="text" name="username" placeholder="Username" required><br>
-            <input class="pass" type="password" name="password" placeholder="Password" required><br>
-            <button type="submit">Register</button>
-        </form>-->
+        <div class="panel pale-red leftbar border-red">
+            <p>We are currently not accepting new users.</p><br>
+            <p>Please contact <a href="mailto:me@aaronperkel.com">me@aaronperkel.com</a> for help.</p>
+        </div>
     </main>
 
     <footer>
