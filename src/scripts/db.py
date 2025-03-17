@@ -8,7 +8,7 @@ import schedule
 import time 
 import os
 
-load_dotenv('/users/a/p/aperkel/utilities.aperkel.w3.uvm.edu-root/config/.env')
+load_dotenv('/users/a/p/aperkel/.env')
 
 dates = []
 people = []
