@@ -6,7 +6,7 @@ Thumbs.db
 vendor/
 
 # Ignore environment configuration files (contains sensitive data)
-config/.env
+.env
 
 # Ignore bills PDFs and other uploaded files (potentially sensitive and large)
 public/
