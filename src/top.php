@@ -1,6 +1,7 @@
 <?php
 $phpSelf = htmlspecialchars($_SERVER['PHP_SELF']);
 $pathParts = pathinfo($phpSelf);
+$_SERVER['REMOTE_USER'] = 'aperkel';
 ?>
 <!DOCTYPE HTML>
 <html lang="en">

@@ -1,14 +1,11 @@
-<?php include 'top.php';
+<?php 
+include 'top.php';
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+if (!isset($_SERVER['REMOTE_USER']) || $_SERVER['REMOTE_USER'] !== 'aperkel') {
+    die("Access denied.");
+}
 
 $peopleList = ['Aaron', 'Owen', 'Ben'];
-
-if ($_SESSION['role'] !== 'Admin') {
-    echo 'Access denied.';
-    exit;
-}
 
 $dataIsGood = false;
 

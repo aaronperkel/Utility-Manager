@@ -1,15 +1,8 @@
 <?php
+include 'top.php';
 
-session_start();
-if (!isset($_SESSION['username'])) {
-    header('Location: login.php');
-    exit;
-}
-
-
-if ($_SESSION['role'] !== 'Admin') {
-    echo 'Access denied.';
-    exit;
+if (!isset($_SERVER['REMOTE_USER']) || $_SERVER['REMOTE_USER'] !== 'aperkel') {
+    die("Access denied.");
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -20,8 +13,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     header('Location: portal.php');
     exit;
 }
-
-include 'top.php';
 ?>
 <form method="POST">
     <label>Subject:</label><br>
