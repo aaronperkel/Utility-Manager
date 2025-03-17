@@ -28,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <!-- login.php -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Register - 81 Buell Utilties</title>
@@ -50,14 +51,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             echo '<p>' . htmlspecialchars($_GET['error']) . '</p>';
             echo '</div>';
         }
-		if (isset($_GET['message'])) {
+        if (isset($_GET['message'])) {
             echo '<div class="panel pale-green leftbar border-green">';
             echo '<p>' . htmlspecialchars($_GET['message']) . '</p>';
             echo '</div>';
         }
         ?>
 
-    <!-- if new users -->
+        <!-- if new users -->
         <!-- <form method="post" action="register.php">
             <div class="input-container">
                 <i class="fa fa-user icon" style="color:black;"></i>
@@ -69,16 +70,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
             <button type="submit">Register</button>
         </form> -->
-   
 
 
-    <!-- if no new users -->
-    
+
+        <!-- if no new users -->
+
         <div class="panel pale-red leftbar border-red">
             <p>We are currently not accepting new users.</p><br>
             <p>Please contact <a href="mailto:me@aaronperkel.com">me@aaronperkel.com</a> for help.</p>
         </div>
-   
+
 
     </main>
 
@@ -91,4 +92,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </p>
     </footer>
 </body>
+
 </html>

@@ -23,13 +23,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 include 'top.php';
 ?>
-    <form method="POST">
-        <label>Subject:</label><br>
-        <input type="text" name="subject" required><br><br>
-        <label>Message:</label><br>
-        <textarea name="body" required></textarea><br><br>
-        <button type="submit">Send Email</button>
-    </form>
+<form method="POST">
+    <label>Subject:</label><br>
+    <input type="text" name="subject" required><br><br>
+    <label>Message:</label><br>
+    <textarea name="body" required></textarea><br><br>
+    <button type="submit">Send Email</button>
+</form>
 
 <?php
 include 'footer.php';

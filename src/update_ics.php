@@ -19,17 +19,17 @@ for ($i = 0; $i < count($dates); $i++) {
     // Parse date and format as required
     $due_date = DateTime::createFromFormat('Y-m-d', substr($dates[$i], 0, 10));
     $due_date_str = $due_date->format("Ymd");
-    
+
     // Determine event status
     $event_status = "- PAID";
     if (strtolower($status[$i]) != "paid") {
         $event_status = "";
     }
-    
+
     // Build the ICS event entry
     $summary = "{$item[$i]} Bill Due {$event_status}";
     $dtstamp = gmdate('Ymd\THis\Z');
-    
+
     $ics_content .= "BEGIN:VEVENT\n";
     $ics_content .= "UID:{$item[$i]}-{$dates[$i]}";
     $ics_content .= "DTSTAMP:{$dtstamp}\n";

@@ -26,4 +26,4 @@ include '../top.php';
     ('06/26/24', 'Gas', '$9.00', '$3.00', '06/27/24', 'Paid', '0613.pdf', 'Aaron, Owen, Ben');
     </pre>
 </main>
-<?php include '../footer.php'?>
+<?php include '../footer.php' ?>

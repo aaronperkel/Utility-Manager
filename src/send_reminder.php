@@ -12,12 +12,12 @@ if (isset($_POST['sendReminder'])) {
 
     $owedArray = explode(',', $result['fldOwe']);
 
-    $owed = array_map(function($value) {
+    $owed = array_map(function ($value) {
         return '"' . trim($value) . '"';
     }, $owedArray);
 
     $owedString = implode(',', $owed);
-    
+
     $command = escapeshellcmd('python3 ./scripts/send_reminder.py "' . $result['fldDue'] . '" [' . $owedString . ']');
     $output = shell_exec($command);
 
