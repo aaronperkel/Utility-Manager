@@ -4,7 +4,6 @@ from email.mime.text import MIMEText
 import datetime
 from dotenv import load_dotenv
 import smtplib
-import schedule
 import time 
 import os
 
@@ -54,7 +53,7 @@ def check_bills():
 
     ssl_args = {'ssl': {'ca': '../../webdb-cacert.pem'}}
     db_engine = create_engine(
-            'mysql://' + os.getenv('DBUSER') + ':' + os.getenv('DBPASS') + '@webdb.uvm.edu/' + os.getenv('DBNAME'),
+            'mysql://' + os.getenv('DBUSER') + ':' + os.getenv('DBPASS') + '@webdb.uvm.edu/' + os.getenv('DBNAMEUTIL'),
             connect_args=ssl_args)
     Session = sessionmaker(bind=db_engine)
     db = Session()
@@ -204,16 +203,9 @@ def new_bill():
     confirm(msg['To'], msg['Subject'], body)
 
 def run_schedule():
-    global dates
-    global people
-
-    schedule.every().day.at("10:00").do(check_bills)
-
     while True:
         dates = []
-        people = []
-        schedule.run_pending()        
-
+        people = []       
         if dates:
             print('-------------- Email Scheduling --------------')    
             print('Unpaid Bills:')
@@ -236,30 +228,23 @@ def run_schedule():
             print('=================== Done ===================\n')
         
 if __name__ == '__main__':
-    print('Press Enter to call check_bills()')
-    while True:
-        dates = []
-        people = []
-        input()
-        check_bills()        
+    dates, people = check_bills()
+    if dates:
+        print('-------------- Email Scheduling --------------')    
+        print('Unpaid Bills:')
+        for i, date in enumerate(dates):
+            print(f'- {date}: {people[i]}')
+            new_date = datetime.datetime.strptime(date, date_format)
+            today = datetime.datetime.strptime(time.strftime("%Y-%m-%d", time.localtime()), date_format)
+            delta = new_date - today
+            days_left = delta.days
+            print(f'  - Days until bill due: {days_left}')
 
-        if dates:
-            print('-------------- Email Scheduling --------------')    
-            print('Unpaid Bills:')
-            for i, date in enumerate(dates):
-                print(f'- {date}: {people[i]}')
-                new_date = datetime.datetime.strptime(date, date_format)
-                today = time.strftime("%Y-%m-%d", time.localtime())
-                today = datetime.datetime.strptime(today, date_format)
-                delta = new_date - today
-                days_left = delta.days
-                print(f'  - Days until bill due: {days_left}')
-
-                if days_left <= 7:
-                    print('  - Sending Email')
-                    send_email(date, people[i])
-                    print('  - Email Sent')
-                    time.sleep(1)
-                else:
-                    print('  - Not Sending Email')
-            print('=================== Done ===================\n')
+            if days_left <= 7:
+                print('  - Sending Email')
+                send_email(date, people[i])
+                print('  - Email Sent')
+                time.sleep(1)
+            else:
+                print('  - Not Sending Email')
+        print('=================== Done ===================\n')
