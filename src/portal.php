@@ -102,43 +102,67 @@ $cells = $stmt->fetchAll();
                     <th>Per Person</th>
                     <th>Due</th>
                     <th>Status</th>
+                    <th class="payment">Payment</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($cells as $c): ?>
                     <tr>
-                        <td><?= htmlspecialchars($c['fldDate']) ?></td>
-                        <td><?= htmlspecialchars($c['fldItem']) ?></td>
-                        <td>$<?= htmlspecialchars($c['fldTotal']) ?></td>
-                        <td>$<?= htmlspecialchars($c['fldCost']) ?></td>
+                        <td><?= $c['fldDate'] ?></td>
+                        <td><?= $c['fldItem'] ?></td>
+                        <td>$<?= $c['fldTotal'] ?></td>
+                        <td>$<?= $c['fldCost'] ?></td>
                         <td>
-                            <?= htmlspecialchars($c['fldDue']) ?>
                             <?php if ($c['fldStatus'] !== "Paid"): ?>
-                                <form method="POST" action="send_reminder.php" style="display:inline">
+                                <form method="POST" action="send_reminder.php" style="margin:0">
                                     <input type="hidden" name="pmk" value="<?= $c['pmkBillID'] ?>">
-                                    <button class="badge badge-unpaid">Send Reminder</button>
+                                    <button type="submit" class="badge badge-unpaid">
+                                        <?= htmlspecialchars($c['fldDue']) ?>
+                                    </button>
                                 </form>
+                            <?php else: ?>
+                                <!-- If already paid, just show the date -->
+                                <span><?= htmlspecialchars($c['fldDue']) ?></span>
                             <?php endif; ?>
+                        </td>
+                        <td class="payment-cell">
+                            <form method="POST" action="update_owe.php" style="display:inline">
+                                <input type="hidden" name="id2" value="<?= $c['pmkBillID'] ?>">
+                                <?php
+                                // build paid‐list = those NOT in fldOwe
+                                $owed = array_map('trim', explode(',', $c['fldOwe']));
+                                $all = ['Aaron', 'Owen', 'Ben'];
+                                $paid = array_diff($all, $owed);
+                                foreach ($all as $p) {
+                                    $isChecked = in_array($p, $paid) ? 'checked' : '';
+                                    echo "<label style=\"margin-right:.5em\">
+                <input type=\"checkbox\" name=\"paidPeople[]\" value=\"$p\" $isChecked>
+                $p
+              </label>";
+                                }
+                                ?>
+                                <button type="submit">Update</button>
+                            </form>
                         </td>
                         <td>
                             <?php if ($c['fldStatus'] === "Paid"): ?>
-                                <span class="badge badge-paid">Paid</span>
-                                <form method="POST" action="update_status_unpaid.php" style="display:inline">
+                                <button class="badge badge-paid"
+                                    onclick="document.getElementById('unpay-<?= $c['pmkBillID'] ?>').submit()">Paid</button>
+                                <form id="unpay-<?= $c['pmkBillID'] ?>" method="POST" action="update_status_unpaid.php">
                                     <input type="hidden" name="id" value="<?= $c['pmkBillID'] ?>">
-                                    <button class="badge badge-unpaid">Mark Unpaid</button>
                                 </form>
                             <?php else: ?>
-                                <span class="badge badge-unpaid" data-tooltip="Owe: <?= $c['fldOwe'] ?>">Unpaid</span>
-                                <form method="POST" action="update_status_paid.php" style="display:inline">
+                                <button class="badge badge-unpaid"
+                                    onclick="document.getElementById('pay-<?= $c['pmkBillID'] ?>').submit()">Unpaid</button>
+                                <form id="pay-<?= $c['pmkBillID'] ?>" method="POST" action="update_status_paid.php">
                                     <input type="hidden" name="id" value="<?= $c['pmkBillID'] ?>">
-                                    <button class="badge badge-paid">Mark Paid</button>
                                 </form>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <a href="<?= $c['fldView'] ?>" target="_blank" class="icon-link">View</a>
-                            | 
+                            <a href="<?= $c['fldView'] ?>" class="icon-link" target="_blank">View</a>
+                            |
                             <a href="<?= $c['fldView'] ?>" download class="icon-link">Download</a>
                         </td>
                     </tr>
@@ -150,7 +174,7 @@ $cells = $stmt->fetchAll();
     <h2 class="section-title">Add New Bill</h2>
     <div class="form-panel">
         <form method="POST" action="portal.php" enctype="multipart/form-data">
-            <label for="date">Date Billed</label>
+            <label for="date">Date</label>
             <input type="date" id="date" name="date" required>
 
             <label for="item">Item</label>
@@ -160,24 +184,24 @@ $cells = $stmt->fetchAll();
                 <option>Internet</option>
             </select>
 
-            <label for="total">Bill Total</label>
+            <label for="total">Total</label>
             <input type="number" id="total" name="total" oninput="updateField()" step="0.01" required>
 
-            <label for="cost">Cost per Person</label>
+            <label for="cost">Per Person</label>
             <input type="number" id="cost" name="cost" readonly step="0.01">
 
             <label for="due">Due Date</label>
             <input type="date" id="due" name="due" required>
 
             <label>Status</label>
-            <div style="margin-bottom:1em;">
+            <div>
                 <input type="radio" id="unpaid" name="status" value="Unpaid" checked>
                 <label for="unpaid">Unpaid</label>
                 <input type="radio" id="paid" name="status" value="Paid">
                 <label for="paid">Paid</label>
             </div>
 
-            <label for="view">PDF Path/URL</label>
+            <label for="view">PDF URL</label>
             <input type="text" id="view" name="view" required>
 
             <button type="submit">Submit New Bill</button>

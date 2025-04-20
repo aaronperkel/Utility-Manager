@@ -26,7 +26,7 @@ body {
     padding: 0 1em;
 }
 
-/* Banner at top of index.php */
+/* Banner */
 .banner {
     background: var(--primary);
     color: #fff;
@@ -44,7 +44,7 @@ body {
     color: var(--text-main);
 }
 
-/* Tables everywhere */
+/* Tables */
 .table-responsive {
     overflow-x: auto;
     background: var(--bg-panel);
@@ -67,7 +67,6 @@ thead th {
     text-align: left;
     padding: 0.75em;
     font-weight: 600;
-    z-index: 2;
 }
 
 tbody tr:nth-child(odd) {
@@ -86,24 +85,36 @@ th {
     color: var(--text-main);
 }
 
-/* Status badges */
+/* Status badges as buttons */
 .badge {
-    display: inline-block;
-    padding: 0.25em 0.6em;
-    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4em 0.8em;
+    border-radius: 0.3em;
     font-size: 0.85rem;
-    position: relative;
+    border: none;
+    transition: background 0.2s;
 }
 
 .badge-paid {
     background: var(--paid);
     color: #1A202C;
+    cursor: pointer;
+}
+
+.badge-paid:hover {
+    background: #38A169;
 }
 
 .badge-unpaid {
     background: var(--unpaid);
     color: #FFF;
-    cursor: help;
+    cursor: pointer;
+}
+
+.badge-unpaid:hover {
+    background: #E53E3E;
 }
 
 .badge-unpaid[data-tooltip]:hover::after {
@@ -119,6 +130,14 @@ th {
     white-space: nowrap;
     font-size: 0.75rem;
     z-index: 10;
+}
+
+/* Add a bit more spacing in the "Due" column */
+td.due-cell {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    /* space between date and button */
 }
 
 /* Nav */
@@ -137,7 +156,6 @@ nav a {
     text-decoration: none;
     padding: 0.5em 1em;
     border-radius: 0.3em;
-    transition: background 0.2s;
 }
 
 nav a:hover {
@@ -145,43 +163,36 @@ nav a:hover {
     color: #fff;
 }
 
-/* Icon links */
-.icon-link {
-    color: var(--primary);
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.icon-link:hover {
-    text-decoration: underline;
-}
-
-/* Admin‐portal form + send‐email styling */
+/* Forms in admin portal */
 .form-panel {
     background: var(--bg-panel);
     padding: 1.5em;
     border-radius: 0.5em;
-    max-width: 600px;
-    margin: 0 auto 2em;
+    max-width: none;
+    margin: 1em 0;
+    display: table;
+    /* make it span full width like a row */
+    width: 100%;
+}
+
+.form-panel form {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1em;
+    align-items: end;
 }
 
 .form-panel label {
-    display: block;
-    margin-bottom: 0.5em;
-    font-weight: 600;
+    font-size: 0.85rem;
     color: var(--text-main);
 }
 
-.form-panel input[type="text"],
-.form-panel input[type="date"],
-.form-panel input[type="number"],
+.form-panel input,
 .form-panel select,
-.form-panel textarea {
-    width: 100%;
-    padding: 0.75em;
-    margin-bottom: 1em;
-    border: 1px solid #4A5568;
+.form-panel button {
+    padding: 0.5em;
     border-radius: 0.3em;
+    border: 1px solid #4A5568;
     background: #1E293B;
     color: var(--text-main);
 }
@@ -189,11 +200,9 @@ nav a:hover {
 .form-panel button {
     background: var(--primary);
     color: #fff;
-    padding: 0.75em 1.5em;
     border: none;
-    border-radius: 0.3em;
     cursor: pointer;
-    font-size: 1rem;
+    transition: opacity 0.2s;
 }
 
 .form-panel button:hover {
@@ -213,9 +222,67 @@ nav a:hover {
 
 .site-footer a {
     color: var(--primary);
-    text-decoration: none;
 }
 
-.site-footer a:hover {
+/* Icon links */
+.icon-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.icon-link:hover {
     text-decoration: underline;
+}
+
+/* ========== Payment column styling ========== */
+
+/* Ensure the form lines up neatly */
+.payment-cell form {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin: 0;
+    /* Reset any form margins */
+}
+
+/* Style each label/checkbox pair */
+.payment-cell label {
+    font-size: 0.9rem;
+    color: var(--text-main);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25em;
+    margin: 0;
+    /* Reset default margin */
+}
+
+/* Make the checkboxes a bit bigger and use the primary color */
+.payment-cell input[type="checkbox"] {
+    width: 1.25em;
+    height: 1.25em;
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+
+/* Style the update button like your badges */
+.payment-cell button {
+    padding: 0.4em 0.8em;
+    border: none;
+    border-radius: 0.3em;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.payment-cell button:hover {
+    opacity: 0.9;
+}
+
+/* (Optional) if you need to shrink this column */
+th.payment {
+    width: 1%;
+    white-space: nowrap;
 }

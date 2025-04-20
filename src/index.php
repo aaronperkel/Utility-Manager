@@ -2,7 +2,17 @@
 
 <?php
 // Calculate amount owed by current user
-$user = $_SERVER['REMOTE_USER'];
+$userId = $_SERVER['REMOTE_USER'];
+// map your LDAP uids to the names stored in fldOwe
+$uidToName = [
+    'aperkel' => 'Aaron',
+    'oacook' => 'Owen',
+    'bquacken' => 'Ben',
+];
+
+$userName = $uidToName[$userId] ?? $userId;
+
+
 $sqlOwe = '
     SELECT SUM(fldCost) AS owed
     FROM tblUtilities
@@ -10,7 +20,7 @@ $sqlOwe = '
       AND FIND_IN_SET(?, fldOwe)
   ';
 $stmtOwe = $pdo->prepare($sqlOwe);
-$stmtOwe->execute([$user]);
+$stmtOwe->execute([$userName]);
 $owed = $stmtOwe->fetch()['owed'] ?? 0;
 
 // Fetch all bills
@@ -43,7 +53,12 @@ $cells = $stmt->fetchAll();
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($cells as $cell): ?>
+                <?php foreach ($cells as $cell):
+                    // figure out who still owes this bill
+                    $owedList = array_map('trim', explode(',', $cell['fldOwe']));
+                    // decide Paid vs Unpaid for *this* user
+                    $isOwed = in_array($userName, $owedList);
+                    ?>
                     <tr>
                         <td><?= htmlspecialchars($cell['fldDate']) ?></td>
                         <td><?= htmlspecialchars($cell['fldItem']) ?></td>
@@ -51,12 +66,10 @@ $cells = $stmt->fetchAll();
                         <td>$<?= number_format($cell['fldCost'], 2) ?></td>
                         <td><?= htmlspecialchars($cell['fldDue']) ?></td>
                         <td>
-                            <?php if ($cell['fldStatus'] === 'Paid'): ?>
-                                <span class="badge badge-paid">Paid</span>
+                            <?php if ($isOwed): ?>
+                                <span class="badge badge-unpaid">Unpaid</span>
                             <?php else: ?>
-                                <span class="badge badge-unpaid" data-tooltip="Unpaid: <?= htmlspecialchars($cell['fldOwe']) ?>">
-                                    Unpaid
-                                </span>
+                                <span class="badge badge-paid">Paid</span>
                             <?php endif; ?>
                         </td>
                         <td>
