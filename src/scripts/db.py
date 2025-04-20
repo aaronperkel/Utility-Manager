@@ -13,35 +13,24 @@ dates = []
 people = []
 date_format = "%Y-%m-%d"
 
-def get_email_body(num, date):
-    if num == 0:
-        body = """
-        <p style="font: 14pt serif;">Hello,</p>
-        <p style="font: 14pt serif;">This is a reminder that you have
-        an upcoming utility bill due on """ + date + """.</p>
-        """
-    else:
-        body = """
-        <p style="font: 14pt serif;">Hello,</p>
-        <p style="font: 14pt serif;">You have a new bill ready to view.</p>
-        """
-
-    body += """
-    <p style="font: 14pt serif;">
-        Please login to
-        <a href="https://utilities.aperkel.w3.uvm.edu">81 Buell Utilities</a>
-        for more info.
-    </p>
-    <p style="font: 14pt serif;">
-    <span style="color: green;">
-    81 Buell Utilities</span><br>
-    P: (478)262-8935 | E: me@aaronperkel.com</p>"""
-
-    reminder = """"""
-
-    body += reminder
-
-    return body
+def get_email_body(due_date, total, cost):
+    return f"""
+<p style="font: 14pt serif;">Hello,</p>
+<p style="font: 14pt serif;">This is a reminder that your utility bill is due on {due_date}.</p>
+<ul>
+    <li style="font: 14pt serif;">Bill total: ${total}</li>
+    <li style="font: 14pt serif;">Cost per person: ${cost}</li>
+</ul>
+<p style="font: 14pt serif;">
+    Please login to
+    <a href="https://utilities.aperkel.w3.uvm.edu">81 Buell Utilities</a>
+    for more info.
+</p>
+<p style="font: 14pt serif;">
+    <span style="color: green;">81 Buell Utilities</span><br>
+    P: (478)262-8935 | E: me@aaronperkel.com
+</p>
+"""
 
 def check_bills():
     global dates
@@ -75,78 +64,49 @@ def check_bills():
     
     return dates, people
 
-def send_email(date):
+def send_email(date, person):
     global date_format
+    emailMap = {
+        'Aaron': 'aperkel@uvm.edu',
+        'Owen':   'oacook@uvm.edu',
+        'Ben':    'bquacken@uvm.edu',
+    }
+    recipients = [ emailMap[person] ] if person in emailMap else []
+    
+    ssl_args = {'ssl': {'ca': '../../webdb-cacert.pem'}}
+    db_engine = create_engine(
+            'mysql://' + os.getenv('DBUSER') + ':' + os.getenv('DBPASS') + '@webdb.uvm.edu/' + os.getenv('DBNAMEUTIL'),
+            connect_args=ssl_args)
+    
+    # grab the total & cost for this exact person’s share of this bill
+    with db_engine.connect() as conn:
+        total, cost = conn.execute(
+            text("""
+                SELECT fldTotal, fldCost
+                FROM tblUtilities
+                WHERE fldDue = :due
+                  AND FIND_IN_SET(:person, fldOwe)
+            """),
+            {"due": date, "person": person}
+        ).fetchone()
+        
+    new_date = datetime.datetime.strptime(date, date_format)
+    days_left = (new_date - datetime.datetime.today()).days
+    subject = 'URGENT: Utility Bill Reminder' if days_left <= 3 else 'Utility Bill Reminder'
+
+    body = get_email_body(date, total, cost)
     
     sender_email = 'aaron.perkel@icloud.com'
-    sender = 'me@aaronperkel.com'
     sender_password = os.getenv('EMAIL_PASS')
-    recipients = ['aperkel@uvm.edu', 'oacook@uvm.edu', 'bquacken@uvm.edu']
-
-    new_date = datetime.datetime.strptime(date, date_format)
-    today = time.strftime(date_format, time.localtime())
-    today = datetime.datetime.strptime(today, date_format)
-    delta = new_date - today
-    days_left = delta.days
-
-    if days_left <= 3:
-        subject = 'URGENT: Utility Bill Reminder'
-    else:
-        subject = 'Utility Bill Reminder'
-
-    body = get_email_body(0, date)
 
     msg = MIMEText(body, 'html')
     msg['Subject'] = subject
-    msg['From'] = '81 Buell Utilities <' + sender + '>'
-    msg['To'] = ', '.join(recipients)
+    msg['From']    = '81 Buell Utilities <me@aaronperkel.com>'
+    msg['To']      = ', '.join(recipients)
 
     with smtplib.SMTP('smtp.gmail.com', 587) as server:
         server.ehlo()
         server.starttls()
-        server.ehlo()
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, recipients, msg.as_string())
-
-    confirm(msg['To'], msg['Subject'], body)
-
-def send_email(date, people):
-    recipients = []
-    global date_format
-
-    if ('Aaron' in people):
-        recipients.append('aperkel@uvm.edu')
-    if ('Owen' in people):
-        recipients.append('oacook@uvm.edu')
-    if ('Ben' in people):
-        recipients.append('bquacken@uvm.edu')
-
-    sender_email = 'aaron.perkel@icloud.com'
-    sender = 'me@aaronperkel.com'
-    sender_password = os.getenv('EMAIL_PASS')
-    
-    new_date = datetime.datetime.strptime(date, date_format)
-    today = time.strftime(date_format, time.localtime())
-    today = datetime.datetime.strptime(today, date_format)
-    delta = new_date - today
-    days_left = delta.days
-
-    if days_left <= 3:
-        subject = 'URGENT: Utility Bill Reminder'
-    else:
-        subject = 'Utility Bill Reminder'
-
-    body = get_email_body(0, date)
-
-    msg = MIMEText(body, 'html')
-    msg['Subject'] = subject
-    msg['From'] = '81 Buell Utilities <' + sender + '>'
-    msg['To'] = ', '.join(recipients)
-
-    with smtplib.SMTP('smtp.mail.me.com', 587) as server:
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, recipients, msg.as_string())
 
@@ -178,62 +138,14 @@ def confirm(recip, sub, msg):
         server.ehlo()
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, msg['To'], msg.as_string())
-
-def new_bill():
-    sender_email = 'aaron.perkel@icloud.com'
-    sender = 'me@aaronperkel.com'
-    sender_password = os.getenv('EMAIL_PASS')
-    recipients = ['aperkel@uvm.edu', 'oacook@uvm.edu', 'bquacken@uvm.edu']
-    subject = 'New Bill Posted'
-
-    body = get_email_body(1, sender_email)
-
-    msg = MIMEText(body, 'html')
-    msg['Subject'] = subject
-    msg['From'] = '81 Buell Utilities <' + sender + '>'
-    msg['To'] = ', '.join(recipients)
-
-    with smtplib.SMTP('smtp.mail.me.com', 587) as server:
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, recipients, msg.as_string())
-
-    confirm(msg['To'], msg['Subject'], body)
-
-def run_schedule():
-    while True:
-        dates = []
-        people = []       
-        if dates:
-            print('-------------- Email Scheduling --------------')    
-            print('Unpaid Bills:')
-            for i, date in enumerate(dates):
-                print(f'- {date}: {people[i]}')
-                new_date = datetime.datetime.strptime(date, date_format)
-                today = time.strftime("%Y-%m-%d", time.localtime())
-                today = datetime.datetime.strptime(today, date_format)
-                delta = new_date - today
-                days_left = delta.days
-                print(f'  - Days until bill due: {days_left}')
-
-                if days_left <= 7:
-                    print('  - Sending Email')
-                    send_email(date, people[i])
-                    print('  - Email Sent')
-                    time.sleep(1)
-                else:
-                    print('  - Not Sending Email')
-            print('=================== Done ===================\n')
         
 if __name__ == '__main__':
     dates, people = check_bills()
     if dates:
         print('-------------- Email Scheduling --------------')    
         print('Unpaid Bills:')
-        for i, date in enumerate(dates):
-            print(f'- {date}: {people[i]}')
+        for date, person in zip(dates, people):
+            print(f'- {date}: {person}')
             new_date = datetime.datetime.strptime(date, date_format)
             today = datetime.datetime.strptime(time.strftime("%Y-%m-%d", time.localtime()), date_format)
             delta = new_date - today
@@ -242,7 +154,7 @@ if __name__ == '__main__':
 
             if days_left <= 7:
                 print('  - Sending Email')
-                send_email(date, people[i])
+                send_email(date, person)
                 print('  - Email Sent')
                 time.sleep(1)
             else:

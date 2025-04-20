@@ -77,9 +77,72 @@ $data = array($date, $item, $total, $cost, $due, $status, $filePath, 'Aaron, Owe
 
 if ($dataIsGood) {
     $statement->execute($data);
+    // stash
+    $tmp = [
+        'item'  => $item,
+        'due'   => $due,
+        'total' => $total,
+        'cost'  => $cost,
+    ];
+  
     include "update_ics.php";
-    $command = escapeshellcmd('python scripts/new_bill.py');
-    $output = shell_exec($command);
+    
+    // restore
+    $item  = $tmp['item'];
+    $due   = $tmp['due'];
+    $total = $tmp['total'];
+    $cost  = $tmp['cost'];
+
+    // ── send “New Bill Posted” emails in the PHP style ──
+
+    // 1) map roommate names to addresses
+    $emailMap = [
+        'Aaron' => 'aperkel@uvm.edu',
+        'Owen' => 'oacook@uvm.edu',
+        'Ben' => 'bquacken@uvm.edu',
+    ];
+
+    // 2) build subject & headers
+    $subject = 'New Bill Posted';
+    $headers = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+    $headers .= "From: 81 Buell Utilities <me@aaronperkel.com>\r\n";
+
+    // 3) build the HTML body (same pattern as send_reminder.php)
+    $body = <<<HTML
+        <p style="font: 14pt serif;">Hello,</p>
+        <p style="font: 14pt serif;">You have a new <strong>{$item}</strong> bill ready to view. It’s due on {$due}.</p>
+        <ul>
+        <li style="font: 14pt serif;">Bill total: \${$total}</li>
+        <li style="font: 14pt serif;">Cost per person: \${$cost}</li>
+        </ul>
+        <p style="font: 14pt serif;">
+        Please login to
+        <a href="https://utilities.aperkel.w3.uvm.edu">81 Buell Utilities</a>
+        for more info.
+        </p>
+        <p style="font: 14pt serif;">
+        <span style="color: green;">81 Buell Utilities</span><br>
+        P: (478)262-8935 | E: me@aaronperkel.com
+        </p>
+        HTML;
+
+    // 4) loop and send to each roommate
+    foreach ($emailMap as $name => $to) {
+        mail($to, $subject, $body, $headers);
+    }
+
+    // 5) send yourself a confirmation
+    $confirmTo = 'aperkel@uvm.edu';
+    $confirmSubj = 'Mail Sent';
+    $sentList = implode(', ', array_values($emailMap));
+    $confirmBody = <<<HTML
+        <p style="font: 12pt monospace;">An email was just sent via utilities.aperkel.w3.uvm.edu.</p>
+        <hr>
+        <p style="font: 12pt monospace;">To: {$sentList}<br>
+        <p style="font: 12pt monospace;">Subject: {$subject}</p>
+        HTML;
+    mail($confirmTo, $confirmSubj, $confirmBody, $headers);
 }
 
 $sql = 'SELECT pmkBillID,fldDate,fldItem,fldTotal,fldCost,fldDue,fldStatus,fldView,fldOwe
@@ -128,7 +191,7 @@ $cells = $stmt->fetchAll();
                         </td>
                         <td class="payment-cell">
                             <form method="POST" action="update_owe.php" style="display:inline">
-                            <input type="hidden" name="updateNames" value="1">
+                                <input type="hidden" name="updateNames" value="1">
                                 <input type="hidden" name="id2" value="<?= $c['pmkBillID'] ?>">
                                 <?php
                                 // build paid‐list = those NOT in fldOwe
