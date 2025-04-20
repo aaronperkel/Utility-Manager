@@ -20,11 +20,6 @@
 
 ---
 
-## Demo
-![Demo](utility.png)
-
----
-
 ## Setup
 
 ### 1. Clone the Repository
