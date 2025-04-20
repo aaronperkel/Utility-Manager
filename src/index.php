@@ -49,7 +49,7 @@ $cells = $stmt->fetchAll();
                     <th>Cost per Person</th>
                     <th>Due Date</th>
                     <th>Status</th>
-                    <th>See Bill</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>

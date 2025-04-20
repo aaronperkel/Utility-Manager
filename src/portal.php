@@ -164,7 +164,6 @@ $cells = $stmt->fetchAll();
                     <th>Per Person</th>
                     <th>Due</th>
                     <th>Status</th>
-                    <th class="payment">Payment</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -186,7 +185,7 @@ $cells = $stmt->fetchAll();
                                 </form>
                             <?php else: ?>
                                 <!-- If already paid, just show the date -->
-                                <span><?= htmlspecialchars($c['fldDue']) ?></span>
+                                <span class="badge badge-paid"><?= htmlspecialchars($c['fldDue']) ?></span>
                             <?php endif; ?>
                         </td>
                         <td class="payment-cell">
@@ -208,21 +207,6 @@ $cells = $stmt->fetchAll();
                                 ?>
                                 <button type="submit">Update</button>
                             </form>
-                        </td>
-                        <td>
-                            <?php if ($c['fldStatus'] === "Paid"): ?>
-                                <button class="badge badge-paid"
-                                    onclick="document.getElementById('unpay-<?= $c['pmkBillID'] ?>').submit()">Paid</button>
-                                <form id="unpay-<?= $c['pmkBillID'] ?>" method="POST" action="update_status_unpaid.php">
-                                    <input type="hidden" name="id" value="<?= $c['pmkBillID'] ?>">
-                                </form>
-                            <?php else: ?>
-                                <button class="badge badge-unpaid"
-                                    onclick="document.getElementById('pay-<?= $c['pmkBillID'] ?>').submit()">Unpaid</button>
-                                <form id="pay-<?= $c['pmkBillID'] ?>" method="POST" action="update_status_paid.php">
-                                    <input type="hidden" name="id" value="<?= $c['pmkBillID'] ?>">
-                                </form>
-                            <?php endif; ?>
                         </td>
                         <td>
                             <a href="<?= $c['fldView'] ?>" class="icon-link" target="_blank">View</a>
