@@ -1,27 +1,16 @@
-<?php
-include 'top.php';
+<?php include 'top.php'; ?>
+<main class="form-area">
+    <h2 class="section-title">Send Custom Email</h2>
+    <div class="form-panel">
+        <form method="POST">
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" name="subject" required>
 
-if (!isset($_SERVER['REMOTE_USER']) || $_SERVER['REMOTE_USER'] !== 'aperkel') {
-    die("Access denied.");
-}
+            <label for="body">Message</label>
+            <textarea id="body" name="body" rows="6" required></textarea>
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $subject = escapeshellarg($_POST['subject']);
-    $body = escapeshellarg($_POST['body']);
-    $command = "python3 scripts/send_custom_email.py $subject $body";
-    shell_exec($command);
-    header('Location: portal.php');
-    exit;
-}
-?>
-<form method="POST">
-    <label>Subject:</label><br>
-    <input type="text" name="subject" required><br><br>
-    <label>Message:</label><br>
-    <textarea name="body" required></textarea><br><br>
-    <button type="submit">Send Email</button>
-</form>
-
-<?php
-include 'footer.php';
-?>
+            <button type="submit">Send Email</button>
+        </form>
+    </div>
+</main>
+<?php include 'footer.php'; ?>

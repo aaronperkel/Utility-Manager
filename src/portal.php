@@ -1,10 +1,8 @@
-<?php 
-include 'top.php';
-
+<?php include 'top.php'; ?>
+<?php
 if (!isset($_SERVER['REMOTE_USER']) || $_SERVER['REMOTE_USER'] !== 'aperkel') {
     die("Access denied.");
 }
-
 $peopleList = ['Aaron', 'Owen', 'Ben'];
 
 $dataIsGood = false;
@@ -84,145 +82,106 @@ if ($dataIsGood) {
     $command = escapeshellcmd('python scripts/new_bill.py');
     $output = shell_exec($command);
 }
+
+$sql = 'SELECT pmkBillID,fldDate,fldItem,fldTotal,fldCost,fldDue,fldStatus,fldView,fldOwe
+          FROM tblUtilities ORDER BY fldDate DESC';
+$stmt = $pdo->prepare($sql);
+$stmt->execute();
+$cells = $stmt->fetchAll();
 ?>
-<main>
-    <h2>Admin Portal</h2>
-    <table>
-        <tr>
-            <th>Date Billed</th>
-            <th>Item</th>
-            <th>Bill Total</th>
-            <th>Cost per Person</th>
-            <th>Due Date</th>
-            <th>Status</th>
-            <th>See Bill</th>
-        </tr>
-        <?php
-        // Fetch bills from the database
-        $sql = 'SELECT pmkBillID, fldDate, fldItem, fldTotal, fldCost, fldDue, fldStatus, fldView, fldOwe FROM tblUtilities ORDER BY fldDate DESC';
-        $statement = $pdo->prepare($sql);
-        $statement->execute();
+<main class="admin-area">
+    <h2 class="section-title">Admin Portal</h2>
 
-        $cells = $statement->fetchAll();
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Item</th>
+                    <th>Total</th>
+                    <th>Per Person</th>
+                    <th>Due</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($cells as $c): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($c['fldDate']) ?></td>
+                        <td><?= htmlspecialchars($c['fldItem']) ?></td>
+                        <td>$<?= htmlspecialchars($c['fldTotal']) ?></td>
+                        <td>$<?= htmlspecialchars($c['fldCost']) ?></td>
+                        <td>
+                            <?= htmlspecialchars($c['fldDue']) ?>
+                            <?php if ($c['fldStatus'] !== "Paid"): ?>
+                                <form method="POST" action="send_reminder.php" style="display:inline">
+                                    <input type="hidden" name="pmk" value="<?= $c['pmkBillID'] ?>">
+                                    <button class="badge badge-unpaid">Send Reminder</button>
+                                </form>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ($c['fldStatus'] === "Paid"): ?>
+                                <span class="badge badge-paid">Paid</span>
+                                <form method="POST" action="update_status_unpaid.php" style="display:inline">
+                                    <input type="hidden" name="id" value="<?= $c['pmkBillID'] ?>">
+                                    <button class="badge badge-unpaid">Mark Unpaid</button>
+                                </form>
+                            <?php else: ?>
+                                <span class="badge badge-unpaid" data-tooltip="Owe: <?= $c['fldOwe'] ?>">Unpaid</span>
+                                <form method="POST" action="update_status_paid.php" style="display:inline">
+                                    <input type="hidden" name="id" value="<?= $c['pmkBillID'] ?>">
+                                    <button class="badge badge-paid">Mark Paid</button>
+                                </form>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <a href="<?= $c['fldView'] ?>" target="_blank" class="icon-link">View</a>
+                            | 
+                            <a href="<?= $c['fldView'] ?>" download class="icon-link">Download</a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 
-        foreach ($cells as $cell) {
-            print '<tr class="hover">';
-            // Column 1: Date Billed
-            print '<td>' . htmlspecialchars($cell['fldDate']) . '</td>';
-            // Column 2: Item
-            print '<td>' . htmlspecialchars($cell['fldItem']) . '</td>';
-            // Column 3: Bill Total
-            print '<td>$' . htmlspecialchars($cell['fldTotal']) . '</td>';
-            // Column 4: Cost per Person
-            print '<td>$' . htmlspecialchars($cell['fldCost']) . '</td>';
-            // Column 5: Due Date
-            print '<td>' . htmlspecialchars($cell['fldDue']);
+    <h2 class="section-title">Add New Bill</h2>
+    <div class="form-panel">
+        <form method="POST" action="portal.php" enctype="multipart/form-data">
+            <label for="date">Date Billed</label>
+            <input type="date" id="date" name="date" required>
 
-            // If the bill is unpaid, include the 'Send Reminder' form in the Due Date cell
-            if ($cell['fldStatus'] !== "Paid") {
-                print '<form method="POST" action="send_reminder.php" class="status-action-form">';
-                print '<input type="hidden" name="pmk" value="' . htmlspecialchars($cell['pmkBillID']) . '">';
-                print '<input type="submit" name="sendReminder" class="paidButton" value="Send Reminder">';
-                print '</form>';
-            }
-            print '</td>';
+            <label for="item">Item</label>
+            <select id="item" name="item" required>
+                <option>Gas</option>
+                <option>Electric</option>
+                <option>Internet</option>
+            </select>
 
-            // Column 6: Status
-            if ($cell['fldStatus'] == "Paid") {
-                // Display 'Paid' status and option to mark as unpaid
-                print '<td class="paid">' . htmlspecialchars($cell['fldStatus']);
-                print '<form method="POST" action="update_status_unpaid.php">';
-                print '<input type="hidden" name="id" value="' . htmlspecialchars($cell['pmkBillID']) . '">';
-                print '<input type="submit" name="updateStatus" class="paidButton" value="Mark as Unpaid">';
-                print '</form></td>';
-            } else {
-                // Display checkboxes for unpaid bills
-                print '<td class="notPaid">';
-                $owedPeople = array_map('trim', explode(',', $cell['fldOwe']));
+            <label for="total">Bill Total</label>
+            <input type="number" id="total" name="total" oninput="updateField()" step="0.01" required>
 
-                // Start the form for updating owed names
-                print '<form method="POST" action="update_owe.php" class="status-form">';
-                print '<input type="hidden" name="id2" value="' . htmlspecialchars($cell['pmkBillID']) . '">';
+            <label for="cost">Cost per Person</label>
+            <input type="number" id="cost" name="cost" readonly step="0.01">
 
-                // Container for checkboxes
-                print '<div class="checkbox-container">';
+            <label for="due">Due Date</label>
+            <input type="date" id="due" name="due" required>
 
-                foreach ($peopleList as $person) {
-                    $isChecked = !in_array($person, $owedPeople) ? 'checked' : '';
-                    $personId = 'person_' . $cell['pmkBillID'] . '_' . strtolower($person);
-                    print '<label class="checkbox-label" for="' . htmlspecialchars($personId) . '">';
-                    print '<input type="checkbox" id="' . htmlspecialchars($personId) . '" name="paidPeople[]" value="' . htmlspecialchars($person) . '" ' . $isChecked . '> ';
-                    if ($isChecked) {
-                        print '<span class="paid">';
-                    } else {
-                        print '<span class="notPaid">';
-                    }
-                    print htmlspecialchars($person) . '</span>';
-                    print '</label>';
-                }
+            <label>Status</label>
+            <div style="margin-bottom:1em;">
+                <input type="radio" id="unpaid" name="status" value="Unpaid" checked>
+                <label for="unpaid">Unpaid</label>
+                <input type="radio" id="paid" name="status" value="Paid">
+                <label for="paid">Paid</label>
+            </div>
 
-                print '</div>'; // Close checkbox-container
-        
-                // Submit button for updating names
-                print '<input type="submit" name="updateNames" class="paidButton" value="Update">';
-                print '</form>';
+            <label for="view">PDF Path/URL</label>
+            <input type="text" id="view" name="view" required>
 
-                // Form to mark entire bill as paid
-                print '<form method="POST" action="update_status_paid.php" class="status-action-form">';
-                print '<input type="hidden" name="id" value="' . htmlspecialchars($cell['pmkBillID']) . '">';
-                print '<input type="submit" name="updateStatus" class="paidButton" value="Mark as Paid">';
-                print '</form></td>';
-            }
-
-            // Column 7: See Bill
-            print '<td class="spanTwoMobile hover"><a href=' . $cell['fldView'] . ' target="_blank">PDF</a>';
-            print '&nbsp&nbsp<a href="' . $cell['fldView'] . '" download>';
-            print '<i class="fa fa-download icon zoom" style="font-size:20px"></i></a></td>';
-            print '</tr>';
-        }
-        ?>
-    </table>
-
-    <table>
-        <form action="#" id="newEntry" method="POST" enctype="multipart/form-data">
-            <tr class="addData">
-                <th colspan="7" class="spanTwoMobile">New Entry</th>
-            </tr>
-            <tr class="addData">
-                <th>Date Billed</th>
-                <th>Item</th>
-                <th>Bill Total</th>
-                <th>Cost per Person</th>
-                <th>Due Date</th>
-                <th>Status</th>
-                <th class="spanTwoMobile">See Bill</th>
-            </tr>
-            <tr class="addData">
-                <td><input type="date" id="date" name="date" required></td>
-                <td>
-                    <select id="item" name="item" required>
-                        <option value="Gas">Gas</option>
-                        <option value="Electric">Electric</option>
-                        <option value="Internet">Internet</option>
-                    </select>
-                </td>
-                <td><input type="number" id="total" name="total" oninput="updateField()" step=".01" required></td>
-                <td><input type="number" id="cost" name="cost" step=".01" readonly></td>
-                <td><input type="date" id="due" name="due" required></td>
-                <td>
-                    <div class="radio">
-                        <input type="radio" id="unpaid" name="status" value="Unpaid" checked required>
-                        <label for="unpaid">Unpaid</label>
-                        <input type="radio" id="paid" name="status" value="Paid">
-                        <label for="paid">Paid</label>
-                    </div>
-                </td>
-                <td class="spanTwoMobile"><input type="text" id="view" name="view" required></td>
-            </tr>
-            <tr class="addData">
-                <td colspan="7" class="spanTwoMobile"><input type="submit" value="Submit"></td>
-            </tr>
+            <button type="submit">Submit New Bill</button>
         </form>
-    </table>
+    </div>
 </main>
-<?php include 'footer.php' ?>
+<?php include 'footer.php'; ?>
