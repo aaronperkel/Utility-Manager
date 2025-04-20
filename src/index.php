@@ -33,55 +33,70 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $cells = $stmt->fetchAll();
 ?>
+
+<?php
+// group by year
+$billsByYear = [];
+foreach ($cells as $cell) {
+    // parse the billed date (YYYY-MM-DD from your <input type="date">)
+    $dt = new DateTime($cell['fldDate']);
+    $year = $dt->format('Y');
+    $billsByYear[$year][] = $cell;
+}
+// sort years descending
+krsort($billsByYear);
+?>
 <main>
     <div class="banner">
         <p>You currently owe <strong>$<?= number_format($owed, 2) ?></strong></p>
     </div>
 
     <h2 class="section-title">Utility Bills</h2>
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th>Date Billed</th>
-                    <th>Item</th>
-                    <th>Bill Total</th>
-                    <th>Cost per Person</th>
-                    <th>Due Date</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($cells as $cell):
-                    // figure out who still owes this bill
-                    $owedList = array_map('trim', explode(',', $cell['fldOwe']));
-                    // decide Paid vs Unpaid for *this* user
-                    $isOwed = in_array($userName, $owedList);
-                    ?>
+
+    <?php foreach ($billsByYear as $year => $yearCells): ?>
+        <h3 class="section-subtitle"><?= htmlspecialchars($year) ?></h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
                     <tr>
-                        <td><?= htmlspecialchars($cell['fldDate']) ?></td>
-                        <td><?= htmlspecialchars($cell['fldItem']) ?></td>
-                        <td>$<?= number_format($cell['fldTotal'], 2) ?></td>
-                        <td>$<?= number_format($cell['fldCost'], 2) ?></td>
-                        <td><?= htmlspecialchars($cell['fldDue']) ?></td>
-                        <td>
-                            <?php if ($isOwed): ?>
-                                <span class="badge badge-unpaid">Unpaid</span>
-                            <?php else: ?>
-                                <span class="badge badge-paid">Paid</span>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <a href="<?= htmlspecialchars($cell['fldView']) ?>" target="_blank" class="icon-link">View</a>
-                            |
-                            <a href="<?= htmlspecialchars($cell['fldView']) ?>" download class="icon-link">Download</a>
-                        </td>
+                        <th>Date Billed</th>
+                        <th>Item</th>
+                        <th>Total</th>
+                        <th class="col-cost">Per Person</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>See Bill</th>
                     </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                    <?php foreach ($yearCells as $cell):
+                        $owedList = array_map('trim', explode(',', $cell['fldOwe']));
+                        $isOwed = in_array($userName, $owedList);
+                        ?>
+                        <tr>
+                            <td><?= htmlspecialchars($cell['fldDate']) ?></td>
+                            <td><?= htmlspecialchars($cell['fldItem']) ?></td>
+                            <td>$<?= number_format($cell['fldTotal'], 2) ?></td>
+                            <td class="col-cost">$<?= number_format($cell['fldCost'], 2) ?></td>
+                            <td><?= htmlspecialchars($cell['fldDue']) ?></td>
+                            <td>
+                                <?php if ($isOwed): ?>
+                                    <span class="badge badge-unpaid">Unpaid</span>
+                                <?php else: ?>
+                                    <span class="badge badge-paid">Paid</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <a href="<?= htmlspecialchars($cell['fldView']) ?>" target="_blank" class="icon-link">View</a>
+                                |
+                                <a href="<?= htmlspecialchars($cell['fldView']) ?>" download class="icon-link">Download</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endforeach; ?>
 </main>
 
 <?php include 'footer.php'; ?>

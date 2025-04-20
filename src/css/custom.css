@@ -44,6 +44,11 @@ body {
     color: var(--text-main);
 }
 
+.section-subtitle {
+    margin-bottom: 0.25em;
+    color: var(--text-main);
+}
+
 /* Tables */
 .table-responsive {
     overflow-x: auto;
@@ -156,6 +161,8 @@ nav a {
     text-decoration: none;
     padding: 0.5em 1em;
     border-radius: 0.3em;
+
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 nav a:hover {
@@ -344,6 +351,7 @@ th.payment {
     text-align: center;
     font-size: 0.875rem;
     margin-top: 2em;
+    border-radius: 0.5em;
 }
 
 .site-footer a {

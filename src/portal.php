@@ -158,11 +158,11 @@ $cells = $stmt->fetchAll();
         <table>
             <thead>
                 <tr>
-                    <th>Date</th>
+                    <th>Date Billed</th>
                     <th>Item</th>
                     <th>Total</th>
                     <th>Per Person</th>
-                    <th>Due</th>
+                    <th>Due Date</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
