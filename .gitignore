@@ -1,5 +1,5 @@
 # Ignore system files and directories
-.DS_Store
+**/.DS_Store
 Thumbs.db
 
 # Ignore Composer's vendor directory (PHP dependencies)
@@ -32,3 +32,5 @@ scripts/*.pyc
 
 # Ignore node_modules if you have any Node.js dependencies (optional)
 node_modules/
+
+repomix-output.txt
