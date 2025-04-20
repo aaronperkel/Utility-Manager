@@ -41,7 +41,7 @@ for ($i = 0; $i < count($dates); $i++) {
 
 $ics_content .= "END:VCALENDAR";
 
-$file = fopen("./cal.ics", "w");
+$file = fopen("../www-root/cal.ics", "w");
 fwrite($file, $ics_content);
 fclose($file);
 ?>

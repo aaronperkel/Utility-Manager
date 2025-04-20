@@ -115,6 +115,7 @@ $cells = $stmt->fetchAll();
                         <td>
                             <?php if ($c['fldStatus'] !== "Paid"): ?>
                                 <form method="POST" action="send_reminder.php" style="margin:0">
+                                    <input type="hidden" name="sendReminder" value="1">
                                     <input type="hidden" name="pmk" value="<?= $c['pmkBillID'] ?>">
                                     <button type="submit" class="badge badge-unpaid">
                                         <?= htmlspecialchars($c['fldDue']) ?>
@@ -127,6 +128,7 @@ $cells = $stmt->fetchAll();
                         </td>
                         <td class="payment-cell">
                             <form method="POST" action="update_owe.php" style="display:inline">
+                            <input type="hidden" name="updateNames" value="1">
                                 <input type="hidden" name="id2" value="<?= $c['pmkBillID'] ?>">
                                 <?php
                                 // build paid‐list = those NOT in fldOwe

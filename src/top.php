@@ -4,8 +4,6 @@ ob_start();
 $phpSelf = htmlspecialchars($_SERVER['PHP_SELF']);
 $pathParts = pathinfo($phpSelf);
 
-$_SERVER['REMOTE_USER'] = 'aperkel';
-
 include 'connect-DB.php';
 ?>
 <!DOCTYPE HTML>

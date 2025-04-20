@@ -1,4 +1,20 @@
-<?php include 'top.php'; ?>
+<?php include 'top.php';
+
+if (!isset($_SERVER['REMOTE_USER']) || $_SERVER['REMOTE_USER'] !== 'aperkel') {
+    die("Access denied.");
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $subject = escapeshellarg($_POST['subject']);
+    $body = escapeshellarg($_POST['body']);
+    $command = "python3 scripts/send_custom_email.py $subject $body";
+    shell_exec($command);
+    header('Location: portal.php');
+    exit;
+}
+
+?>
+
 <main class="form-area">
     <h2 class="section-title">Send Custom Email</h2>
     <div class="form-panel">
