@@ -137,7 +137,6 @@ td.due-cell {
     display: flex;
     align-items: center;
     gap: 1em;
-    /* space between date and button */
 }
 
 /* Nav */
@@ -163,49 +162,175 @@ nav a:hover {
     color: #fff;
 }
 
-/* Forms in admin portal */
-.form-panel {
-    background: var(--bg-panel);
-    padding: 1.5em;
-    border-radius: 0.5em;
-    max-width: none;
-    margin: 1em 0;
-    display: table;
-    /* make it span full width like a row */
-    width: 100%;
+/* Icon links */
+.icon-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
 }
 
-.form-panel form {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 1em;
-    align-items: end;
+.icon-link:hover {
+    text-decoration: underline;
 }
 
-.form-panel label {
-    font-size: 0.85rem;
+/* ========== Payment column styling ========== */
+.payment-cell form {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin: 0;
+}
+
+.payment-cell label {
+    font-size: 0.9rem;
     color: var(--text-main);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25em;
+    margin: 0;
 }
 
-.form-panel input,
-.form-panel select,
-.form-panel button {
-    padding: 0.5em;
+.payment-cell input[type="checkbox"] {
+    width: 1.25em;
+    height: 1.25em;
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+
+.payment-cell button {
+    padding: 0.4em 0.8em;
+    border: none;
     border-radius: 0.3em;
-    border: 1px solid #4A5568;
-    background: #1E293B;
-    color: var(--text-main);
-}
-
-.form-panel button {
     background: var(--primary);
     color: #fff;
-    border: none;
+    font-size: 0.85rem;
     cursor: pointer;
     transition: opacity 0.2s;
 }
 
-.form-panel button:hover {
+.payment-cell button:hover {
+    opacity: 0.9;
+}
+
+th.payment {
+    width: 1%;
+    white-space: nowrap;
+}
+
+/* ================ Admin “Add New Bill” Form Enhancements ================ */
+.admin-area .form-panel {
+    display: grid;
+    grid-template-columns: auto;
+    grid-auto-rows: auto;
+    gap: 1.5rem 2rem;
+    background: var(--bg-panel);
+    padding: 2rem;
+    border-radius: 0.5em;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.admin-area .form-panel label {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 0.3rem;
+}
+
+.admin-area .form-panel input,
+.admin-area .form-panel select,
+.admin-area .form-panel button {
+    width: 100%;
+    padding: 0.75em 1em;
+    font-size: 1rem;
+    border: 1px solid #4A5568;
+    border-radius: 0.3em;
+    background: #1E293B;
+    color: var(--text-main);
+    transition: border-color 0.2s;
+    margin: 0.25em 0 0.5em 0;
+}
+
+.admin-area .form-panel input:focus,
+.admin-area .form-panel select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.admin-area .form-panel div {
+    grid-column: span 2;
+    display: flex;
+    gap: 1em;
+    align-items: center;
+}
+
+.admin-area .form-panel button[type="submit"] {
+    grid-column: 1 / -1;
+    background: var(--primary);
+    color: #fff;
+    font-size: 1.05rem;
+    padding: 0.9em;
+    cursor: pointer;
+}
+
+.admin-area .form-panel button[type="submit"]:hover {
+    opacity: 0.9;
+}
+
+/* ================ “Send Custom Email” Page Enhancements ================ */
+.form-area {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: var(--bg-panel);
+    border-radius: 0.5em;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.form-area .form-panel {
+    display: grid;
+    gap: 1.2rem;
+}
+
+.form-area label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.form-area input[type="text"],
+.form-area textarea {
+    width: 100%;
+    padding: 0.75em 1em;
+    font-size: 1rem;
+    border: 1px solid #4A5568;
+    border-radius: 0.3em;
+    background: #1E293B;
+    color: var(--text-main);
+    transition: border-color 0.2s;
+    margin: 0.25em 0 0.5em 0;
+}
+
+.form-area input[type="text"]:focus,
+.form-area textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.form-area button {
+    width: auto;
+    padding: 0.75em 1.5em;
+    font-size: 1rem;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 0.3em;
+    cursor: pointer;
+    justify-self: start;
+    transition: opacity 0.2s;
+}
+
+.form-area button:hover {
     opacity: 0.9;
 }
 
@@ -222,67 +347,4 @@ nav a:hover {
 
 .site-footer a {
     color: var(--primary);
-}
-
-/* Icon links */
-.icon-link {
-    color: var(--primary);
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.icon-link:hover {
-    text-decoration: underline;
-}
-
-/* ========== Payment column styling ========== */
-
-/* Ensure the form lines up neatly */
-.payment-cell form {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    margin: 0;
-    /* Reset any form margins */
-}
-
-/* Style each label/checkbox pair */
-.payment-cell label {
-    font-size: 0.9rem;
-    color: var(--text-main);
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25em;
-    margin: 0;
-    /* Reset default margin */
-}
-
-/* Make the checkboxes a bit bigger and use the primary color */
-.payment-cell input[type="checkbox"] {
-    width: 1.25em;
-    height: 1.25em;
-    cursor: pointer;
-    accent-color: var(--primary);
-}
-
-/* Style the update button like your badges */
-.payment-cell button {
-    padding: 0.4em 0.8em;
-    border: none;
-    border-radius: 0.3em;
-    background: var(--primary);
-    color: #fff;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.payment-cell button:hover {
-    opacity: 0.9;
-}
-
-/* (Optional) if you need to shrink this column */
-th.payment {
-    width: 1%;
-    white-space: nowrap;
 }

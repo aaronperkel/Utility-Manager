@@ -12,7 +12,7 @@ $item = '';
 $total = '';
 $cost = '';
 $due = '';
-$status = '';
+$status = 'Unpaid';
 $uploadDir = 'public/';
 
 function getData($field)
@@ -31,7 +31,6 @@ $item = getData('item');
 $total = getData('total');
 $cost = getData('cost');
 $due = getData('due');
-$status = getData('status');
 
 $total = (string) $total;
 $cost = (string) $cost;
@@ -172,7 +171,7 @@ $cells = $stmt->fetchAll();
     </div>
 
     <h2 class="section-title">Add New Bill</h2>
-    <div class="form-panel">
+    <div class="form-panel admin-area">
         <form method="POST" action="portal.php" enctype="multipart/form-data">
             <label for="date">Date</label>
             <input type="date" id="date" name="date" required>
@@ -192,14 +191,6 @@ $cells = $stmt->fetchAll();
 
             <label for="due">Due Date</label>
             <input type="date" id="due" name="due" required>
-
-            <label>Status</label>
-            <div>
-                <input type="radio" id="unpaid" name="status" value="Unpaid" checked>
-                <label for="unpaid">Unpaid</label>
-                <input type="radio" id="paid" name="status" value="Paid">
-                <label for="paid">Paid</label>
-            </div>
 
             <label for="view">PDF URL</label>
             <input type="text" id="view" name="view" required>

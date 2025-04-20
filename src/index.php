@@ -38,7 +38,7 @@ $cells = $stmt->fetchAll();
         <p>You currently owe <strong>$<?= number_format($owed, 2) ?></strong></p>
     </div>
 
-    <h2 class="section-title">Outstanding Utility Bills</h2>
+    <h2 class="section-title">Utility Bills</h2>
     <div class="table-responsive">
         <table>
             <thead>
