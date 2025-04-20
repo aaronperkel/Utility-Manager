@@ -2,65 +2,96 @@
 
 /* Base tweaks */
 .table-responsive {
-    overflow-x: hidden;  /* hide horizontal scrollbar on cards */
-    padding: 0;
-    margin: 0;
+  overflow-x: hidden;
+  /* hide horizontal scrollbar on cards */
+  padding: 0;
+  margin: 0;
+  background: transparent;
+}
+
+/* On mobile: stack rows as cards */
+@media (max-width: 920px) {
+
+  .table-responsive table,
+  .table-responsive thead,
+  .table-responsive tbody,
+  .table-responsive th,
+  .table-responsive tr {
+    display: block;
+    width: 100%;
+    min-width: 0;
   }
-  
-  /* On mobile: stack rows as cards */
-  @media (max-width: 920px) {
-    .table-responsive table,
-    .table-responsive thead,
-    .table-responsive tbody,
-    .table-responsive th,
-    .table-responsive tr {
-      display: block;
-      width: 100%;
-    }
-  
-    /* hide the table header */
-    .table-responsive thead {
-      display: none;
-    }
-  
-    /* each row becomes its own “card” */
-    .table-responsive tr {
-      margin-bottom: 1.5em;
-      border: 1px solid var(--bg-header);
-      border-radius: 0.5em;
-      background: var(--bg-panel);
-      padding: 0.75em 1em;
-    }
-  
-    /* each cell is a label/value flex row */
-    .table-responsive td {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.5em 0;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      font-size: 0.95rem;
-    }
-  
-    /* no divider on last cell */
-    .table-responsive td:last-child {
-      border-bottom: none;
-    }
-  
-    /* inject header labels */
-    .table-responsive td:nth-of-type(1)::before { content: "Date"; }
-    .table-responsive td:nth-of-type(2)::before { content: "Item"; }
-    .table-responsive td:nth-of-type(3)::before { content: "Total"; }
-    .table-responsive td:nth-of-type(4)::before { content: "Per Person"; }
-    .table-responsive td:nth-of-type(5)::before { content: "Due"; }
-    .table-responsive td:nth-of-type(6)::before { content: "Status"; }
-    .table-responsive td:nth-of-type(7)::before { content: "Payment"; }
-    .table-responsive td:nth-of-type(8)::before { content: "Actions"; }
-  
-    .table-responsive td::before {
-      flex: 1;
-      font-weight: 600;
-      margin-right: 0.5em;
-      white-space: nowrap;
-      color: var(--text-main);
-    }
+
+  /* hide the table header */
+  .table-responsive thead {
+    display: none;
   }
+
+  /* each row becomes its own “card” */
+  .table-responsive tr {
+    margin-bottom: 1.5em;
+    border: 1px solid var(--bg-header);
+    border-radius: 0.5em;
+    background: var(--bg-panel);
+    padding: 0.75em 1em;
+  }
+
+  /* each cell is a label/value flex row */
+  .table-responsive td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5em 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.95rem;
+  }
+
+  .table-responsive td a.icon-link {
+    margin: 0 0.25em;
+  }
+
+  /* no divider on last cell */
+  .table-responsive td:last-child {
+    border-bottom: none;
+  }
+
+  /* inject header labels */
+  .table-responsive td:nth-of-type(1)::before {
+    content: "Date Billed";
+  }
+
+  .table-responsive td:nth-of-type(2)::before {
+    content: "Item";
+  }
+
+  .table-responsive td:nth-of-type(3)::before {
+    content: "Total";
+  }
+
+  .table-responsive td:nth-of-type(4)::before {
+    content: "Per Person";
+  }
+
+  .table-responsive td:nth-of-type(5)::before {
+    content: "Due Date";
+  }
+
+  .table-responsive td:nth-of-type(6)::before {
+    content: "Status";
+  }
+
+  .table-responsive td:nth-of-type(7)::before {
+    content: "Actions";
+  }
+
+  .table-responsive td::before {
+    flex: 1;
+    font-weight: 600;
+    margin-right: 0.5em;
+    white-space: nowrap;
+    color: var(--text-main);
+  }
+
+  nav {
+    justify-content: center;
+  }
+}
