@@ -13,12 +13,12 @@ $uidToName = [
 $userName = $uidToName[$userId] ?? $userId;
 
 
-$sqlOwe = '
+$sqlOwe = "
     SELECT SUM(fldCost) AS owed
     FROM tblUtilities
-    WHERE fldStatus <> "Paid"
-      AND FIND_IN_SET(?, fldOwe)
-  ';
+    WHERE fldStatus <> 'Paid'
+      AND FIND_IN_SET(?, REPLACE(fldOwe, ' ', ''))
+  ";
 $stmtOwe = $pdo->prepare($sqlOwe);
 $stmtOwe->execute([$userName]);
 $owed = $stmtOwe->fetch()['owed'] ?? 0;
