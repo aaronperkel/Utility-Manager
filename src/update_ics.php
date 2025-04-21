@@ -1,47 +1,24 @@
 <?php
 $sql = 'SELECT fldDue, fldStatus, fldItem FROM tblUtilities';
-$statement = $pdo->query($sql);
+$stmt = $pdo->query($sql);
 
-$dates = [];
-$status = [];
-$item = [];
-$bills = [];
+$EOL = "\r\n";
+$ics = "BEGIN:VCALENDAR{$EOL}VERSION:2.0{$EOL}PRODID:-//81 Buell Utilities//EN{$EOL}";
 
-while ($row = $statement->fetch(PDO::FETCH_ASSOC)) {
-    $dates[] = $row['fldDue'];
-    $status[] = $row['fldStatus'];
-    $item[] = $row['fldItem'];
-}
-
-$ics_content = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//81 Buell Utilities//EN\n";
-
-for ($i = 0; $i < count($dates); $i++) {
-    // Parse date and format as required
-    $due_date = DateTime::createFromFormat('Y-m-d', substr($dates[$i], 0, 10));
-    $due_date_str = $due_date->format("Ymd");
-
-    // Determine event status
-    $event_status = "- PAID";
-    if (strtolower($status[$i]) != "paid") {
-        $event_status = "";
-    }
-
-    // Build the ICS event entry
-    $summary = "{$item[$i]} Bill Due {$event_status}";
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    $due = DateTime::createFromFormat('Y-m-d', $row['fldDue'])->format('Ymd');
+    $paidFlag = strtolower($row['fldStatus']) === 'paid' ? ' - PAID' : '';
     $dtstamp = gmdate('Ymd\THis\Z');
 
-    $ics_content .= "BEGIN:VEVENT\n";
-    $ics_content .= "UID:{$item[$i]}-{$dates[$i]}";
-    $ics_content .= "DTSTAMP:{$dtstamp}\n";
-    $ics_content .= "DTSTART;VALUE=DATE:{$due_date_str}\n";
-    $ics_content .= "DTEND;VALUE=DATE:{$due_date_str}\n";
-    $ics_content .= "SUMMARY:{$summary}\n";
-    $ics_content .= "END:VEVENT\n";
+    $ics .= "BEGIN:VEVENT{$EOL}";
+    $ics .= "UID:{$row['fldItem']}-{$due}@81buell{$EOL}";
+    $ics .= "DTSTAMP:{$dtstamp}{$EOL}";
+    $ics .= "DTSTART;VALUE=DATE:{$due}{$EOL}";
+    $ics .= "DTEND;VALUE=DATE:{$due}{$EOL}";
+    $ics .= "SUMMARY:{$row['fldItem']} Bill Due{$paidFlag}{$EOL}";
+    $ics .= "END:VEVENT{$EOL}";
 }
 
-$ics_content .= "END:VCALENDAR";
-
-$file = fopen("../www-root/cal.ics", "w");
-fwrite($file, $ics_content);
-fclose($file);
+$ics .= "END:VCALENDAR{$EOL}";
+file_put_contents('../www-root/cal.ics', $ics);
 ?>
