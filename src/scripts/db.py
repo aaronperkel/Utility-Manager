@@ -80,37 +80,45 @@ def send_email(date, person):
     
     # grab the total & cost for this exact person’s share of this bill
     with db_engine.connect() as conn:
-        total, cost = conn.execute(
+        row = conn.execute(
             text("""
                 SELECT fldTotal, fldCost
                 FROM tblUtilities
                 WHERE fldDue = :due
-                  AND FIND_IN_SET(:person, fldOwe)
+                AND FIND_IN_SET(:person, REPLACE(fldOwe, ' ', ''))
             """),
             {"due": date, "person": person}
         ).fetchone()
+
+        if not row:
+            print(f"[WARN] no entry for {person} on {date}, skipping")
+            return
+
+        total, cost = row
         
-    new_date = datetime.datetime.strptime(date, date_format)
-    days_left = (new_date - datetime.datetime.today()).days
-    subject = 'URGENT: Utility Bill Reminder' if days_left <= 3 else 'Utility Bill Reminder'
+        new_date = datetime.datetime.strptime(date, date_format)
+        days_left = (new_date - datetime.datetime.today()).days
+        subject = 'URGENT: Utility Bill Reminder' if days_left <= 3 else 'Utility Bill Reminder'
 
-    body = get_email_body(date, total, cost)
-    
-    sender_email = 'aaron.perkel@icloud.com'
-    sender_password = os.getenv('EMAIL_PASS')
+        body = get_email_body(date, total, cost)
+        
+        sender_email = 'aaron.perkel@icloud.com'
+        sender_password = os.getenv('EMAIL_PASS')
 
-    msg = MIMEText(body, 'html')
-    msg['Subject'] = subject
-    msg['From']    = '81 Buell Utilities <me@aaronperkel.com>'
-    msg['To']      = ', '.join(recipients)
+        msg = MIMEText(body, 'html')
+        msg['Subject'] = subject
+        msg['From']    = '81 Buell Utilities <me@aaronperkel.com>'
+        msg['To']      = ', '.join(recipients)
 
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
-        server.ehlo()
-        server.starttls()
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, recipients, msg.as_string())
+        with smtplib.SMTP('smtp.mail.me.com', 587) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, recipients, msg.as_string())
 
-    confirm(msg['To'], msg['Subject'], body)
+        confirm(msg['To'], msg['Subject'], body)
+        
+        return True
 
 def confirm(recip, sub, msg):
     sender_email = 'aaron.perkel@icloud.com'
@@ -144,19 +152,20 @@ if __name__ == '__main__':
     if dates:
         print('-------------- Email Scheduling --------------')    
         print('Unpaid Bills:')
-        for date, person in zip(dates, people):
-            print(f'- {date}: {person}')
-            new_date = datetime.datetime.strptime(date, date_format)
-            today = datetime.datetime.strptime(time.strftime("%Y-%m-%d", time.localtime()), date_format)
-            delta = new_date - today
-            days_left = delta.days
-            print(f'  - Days until bill due: {days_left}')
+        for date, owes in zip(dates, people):
+            for person in [p.strip() for p in owes.split(',')]:
+                print(f'- {date}: {person}')
+                new_date = datetime.datetime.strptime(date, date_format)
+                today = datetime.datetime.strptime(time.strftime("%Y-%m-%d", time.localtime()), date_format)
+                delta = new_date - today
+                days_left = delta.days
+                print(f'  - Days until bill due: {days_left}')
 
-            if days_left <= 7:
-                print('  - Sending Email')
-                send_email(date, person)
-                print('  - Email Sent')
-                time.sleep(1)
-            else:
-                print('  - Not Sending Email')
+                if days_left <= 7:
+                    print('  - Sending Email')
+                    if send_email(date, person):
+                        print('  - Email Sent')
+                    time.sleep(1)
+                else:
+                    print('  - Not Sending Email')
         print('=================== Done ===================\n')
