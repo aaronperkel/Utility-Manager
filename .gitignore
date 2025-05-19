@@ -8,8 +8,8 @@ vendor/
 # Ignore environment configuration files (contains sensitive data)
 .env
 
-# Ignore bills PDFs and other uploaded files (potentially sensitive and large)
-public/
+# ignore all PDFs under public
+src/public/**/*.pdf
 
 # Ignore Python cache and compiled files
 scripts/__pycache__/
