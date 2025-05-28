@@ -174,10 +174,10 @@ $cells = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </form>
                         </td>
                         <td>
-                            <a href="<?= htmlspecialchars("public/{$c['fldView']}") ?>" target="_blank"
+                            <a href="<?= htmlspecialchars("{$c['fldView']}") ?>" target="_blank"
                                 class="icon-link">View</a>
                             |
-                            <a href="<?= htmlspecialchars("public/{$c['fldView']}") ?>" download
+                            <a href="<?= htmlspecialchars("{$c['fldView']}") ?>" download
                                 class="icon-link">Download</a>
                         </td>
                     </tr>
