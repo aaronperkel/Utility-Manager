@@ -5,8 +5,6 @@
 
 ob_start(); // Start output buffering. Useful for redirecting with header() calls even after some output.
 
-$_SERVER['REMOTE_USER'] = 'aperkel';
-
 // Get the current script's filename without extension to identify the active page for navigation styling.
 $phpSelf = htmlspecialchars($_SERVER['PHP_SELF']); // Sanitize PHP_SELF.
 $pathParts = pathinfo($phpSelf); // Get path info, $pathParts['filename'] will be used in nav.php.
