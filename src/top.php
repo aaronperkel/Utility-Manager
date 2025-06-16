@@ -5,6 +5,8 @@
 
 ob_start(); // Start output buffering. Useful for redirecting with header() calls even after some output.
 
+$_SERVER['REMOTE_USER'] = 'aperkel';
+
 // Get the current script's filename without extension to identify the active page for navigation styling.
 $phpSelf = htmlspecialchars($_SERVER['PHP_SELF']); // Sanitize PHP_SELF.
 $pathParts = pathinfo($phpSelf); // Get path info, $pathParts['filename'] will be used in nav.php.
@@ -37,8 +39,7 @@ include 'connect-DB.php';
     <script src="js/dropdown.js"></script>
 
 </head>
-<?php
-print '<body class="' . $pathParts['filename'] . '">';
-print '<!-- #################   Body element    ################# -->';
-include 'nav.php';
-?>
+
+<body class="<?php echo $pathParts['filename']; ?>">
+    <!-- #################   Body element    ################# -->
+    <?php include 'nav.php'; ?>
