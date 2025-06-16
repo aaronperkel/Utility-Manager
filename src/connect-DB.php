@@ -106,4 +106,35 @@ try {
 
 // Note: All other environment variables loaded by phpdotenv (e.g., APP_BASE_URL, APP_USERS_OWING)
 // are available globally via $_ENV or getenv() in any script that includes this file.
+
+// --- Dry Run Mode Function ---
+/**
+ * Checks if Testing/Dry-Run mode is active based on environment variables.
+ *
+ * Dry-run mode, when active, typically prevents actions that make persistent changes
+ * (e.g., database writes, sending real emails) and instead simulates them.
+ *
+ * @return bool True if Dry-Run mode is active, false otherwise.
+ */
+function isDryRunActive(): bool {
+    // Check if dry-run mode is globally enabled via .env.
+    $dryRunEnabled = filter_var($_ENV['APP_DRY_RUN_ENABLED'] ?? 'false', FILTER_VALIDATE_BOOLEAN);
+    if (!$dryRunEnabled) {
+        return false; // Dry-run is not enabled at all.
+    }
+
+    // Check if dry-run mode is restricted to admin users only.
+    $adminOnly = filter_var($_ENV['APP_DRY_RUN_ADMIN_ONLY'] ?? 'true', FILTER_VALIDATE_BOOLEAN);
+    if (!$adminOnly) {
+        return true; // Dry-run is enabled for everyone.
+    }
+
+    // If dry-run is enabled and admin-only, check if the current user is an admin.
+    $currentUser = $_SERVER['REMOTE_USER'] ?? '';
+    $adminUsersStr = $_ENV['APP_ADMIN_USERS'] ?? '';
+    $adminUsersArray = !empty($adminUsersStr) ? array_map('trim', explode(',', $adminUsersStr)) : [];
+
+    // Return true if current user is in the admin list, false otherwise.
+    return in_array($currentUser, $adminUsersArray, true);
+}
 ?>

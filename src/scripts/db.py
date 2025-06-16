@@ -74,15 +74,23 @@ except json.JSONDecodeError:
 # Validate that all critical environment variables are loaded.
 # This helps in early detection of configuration issues.
 critical_vars = {
-    "DB_NAME": DB_NAME, "DB_USER": DB_USER, "DB_PASS": DB_PASS, # Database credentials
-    "EMAIL_PASS": EMAIL_PASS, # Password for the sender's email account
-    "PYTHON_SENDER_EMAIL": PYTHON_SENDER_EMAIL, # Email address used to send reminders
-    "PYTHON_CONFIRMATION_EMAIL_TO": PYTHON_CONFIRMATION_EMAIL_TO # Admin email for confirmations
+    "DB_NAME": DB_NAME, "DB_USER": DB_USER, "DB_PASS": DB_PASS,
+    "EMAIL_PASS": EMAIL_PASS,
+    "PYTHON_SENDER_EMAIL": PYTHON_SENDER_EMAIL,
+    "PYTHON_CONFIRMATION_EMAIL_TO": PYTHON_CONFIRMATION_EMAIL_TO
+    # APP_BASE_URL is not strictly critical for script to run, defaults exist.
+    # DB_HOST also has a default.
 }
 missing_vars = [name for name, var in critical_vars.items() if not var]
 if missing_vars:
     print(f"Error: Missing critical environment variables: {', '.join(missing_vars)}. Please check your .env file. Exiting.")
-    exit(1) # Exit if critical configuration is missing.
+    exit(1)
+
+# Dry Run Mode Configuration
+# APP_DRY_RUN_ADMIN_ONLY and APP_ADMIN_USERS are not directly applicable to this script,
+# as it's not run in a specific user's context. If APP_DRY_RUN_ENABLED is true,
+# this script will operate in dry-run mode.
+APP_DRY_RUN_ENABLED = os.getenv('APP_DRY_RUN_ENABLED', 'false').lower() in ['true', '1']
 
 
 # --- DatabaseManager Class ---
@@ -191,7 +199,7 @@ def send_email(bill_date_obj: datetime.date, person_name: str, bill_total: float
     Returns True if email sent successfully, False otherwise.
     """
     global DATE_FORMAT_STR, APP_BASE_URL, EMAIL_MAP, APP_EMAIL_FROM_NAME, PYTHON_SENDER_EMAIL, EMAIL_PASS
-    
+
     recipient_email = EMAIL_MAP.get(person_name)
     if not recipient_email:
         print(f"[WARN] No email address found for {person_name} in EMAIL_MAP. Skipping reminder email.")
@@ -200,7 +208,7 @@ def send_email(bill_date_obj: datetime.date, person_name: str, bill_total: float
     # Determine email subject based on urgency.
     days_left = (bill_date_obj - datetime.date.today()).days
     subject = 'URGENT: Utility Bill Reminder' if days_left <= 3 else 'Utility Bill Reminder'
-    
+
     # Format bill date to string for use in email body.
     bill_date_str_formatted = bill_date_obj.strftime(DATE_FORMAT_STR)
 
@@ -213,41 +221,50 @@ def send_email(bill_date_obj: datetime.date, person_name: str, bill_total: float
         from_name=APP_EMAIL_FROM_NAME,
         from_contact_email=PYTHON_SENDER_EMAIL
     )
-    
+
     # Create MIMEText object for HTML email.
     msg = MIMEText(body, 'html')
     msg['Subject'] = subject
     msg['From']    = f"{APP_EMAIL_FROM_NAME} <{PYTHON_SENDER_EMAIL}>" # Use configured sender name and email.
     msg['To']      = recipient_email
 
-    # Attempt to send the email using SMTP.
+    # Attempt to send the email using SMTP, or simulate if in dry-run mode.
+    if APP_DRY_RUN_ENABLED:
+        print(f"[DRY RUN] Would send reminder to: {person_name} ({recipient_email}) for bill due on {bill_date_str_formatted}.")
+        print(f"[DRY RUN] Subject: '{subject}'")
+        # print(f"[DRY RUN] Body (first 100 chars): {body[:100]}...") # Optionally print part of the body
+        # In dry-run, simulate that confirmation would also be sent.
+        send_confirmation_email(recipient_email, subject, body, dry_run=True)
+        return True # Simulate success for dry run flow
+
     try:
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server: # Context manager for SMTP connection.
-            server.ehlo() # Greet server.
-            server.starttls() # Upgrade to TLS encryption.
-            server.ehlo() # Re-greet after TLS.
-            server.login(PYTHON_SENDER_EMAIL, EMAIL_PASS) # Login to SMTP server.
-            server.sendmail(PYTHON_SENDER_EMAIL, [recipient_email], msg.as_string()) # Send the email.
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(PYTHON_SENDER_EMAIL, EMAIL_PASS)
+            server.sendmail(PYTHON_SENDER_EMAIL, [recipient_email], msg.as_string())
         print(f"Reminder email successfully sent to {person_name} ({recipient_email}) for bill due on {bill_date_str_formatted}.")
-        
-        # If main email sent, send a confirmation to admin (best-effort).
+
         send_confirmation_email(
             original_recipient=recipient_email,
             original_subject=subject,
-            original_email_body=body
+            original_email_body=body,
+            dry_run=False # Live confirmation
         )
-        return True # Indicate success.
-    except (smtplib.SMTPException, socket.error) as e: # Catch specific SMTP and socket errors.
+        return True
+    except (smtplib.SMTPException, socket.error) as e:
         print(f"[ERROR] SMTP error while sending reminder to {person_name} ({recipient_email}): {e}")
         return False
-    except Exception as e: # Catch any other unexpected errors.
+    except Exception as e:
         print(f"[ERROR] Unexpected error sending reminder to {person_name} ({recipient_email}): {e}")
         return False
 
 
-def send_confirmation_email(original_recipient: str, original_subject: str, original_email_body: str):
-    """Sends a confirmation email to the admin about the reminder that was sent."""
-    global APP_EMAIL_FROM_NAME, PYTHON_SENDER_EMAIL, PYTHON_CONFIRMATION_EMAIL_TO, EMAIL_PASS
+def send_confirmation_email(original_recipient: str, original_subject: str, original_email_body: str, dry_run: bool = False):
+    """Sends a confirmation email to the admin about the reminder that was sent.
+       If dry_run is True, it simulates sending."""
+    global APP_EMAIL_FROM_NAME, PYTHON_SENDER_EMAIL, PYTHON_CONFIRMATION_EMAIL_TO, EMAIL_PASS # Added EMAIL_PASS
     confirmation_subject = 'Notification Sent Confirmation (Utility Bills Script)'
     # HTML body for the confirmation email.
     confirmation_body = f"""<p style="font: 12pt monospace;">A reminder email was sent via the Utility Bills Script.</p>
@@ -262,25 +279,34 @@ def send_confirmation_email(original_recipient: str, original_subject: str, orig
     msg = MIMEText(confirmation_body, 'html')
     msg['Subject'] = confirmation_subject
     msg['From'] = f"{APP_EMAIL_FROM_NAME} Script Notifier <{PYTHON_SENDER_EMAIL}>" # Use configured sender.
-    msg['To'] = PYTHON_CONFIRMATION_EMAIL_TO # Send to configured admin confirmation email.
+    msg['To'] = PYTHON_CONFIRMATION_EMAIL_TO
+
+    if dry_run:
+        print(f"[DRY RUN] Would send admin confirmation for reminder to '{original_recipient}' (Subject: '{original_subject}') to: {PYTHON_CONFIRMATION_EMAIL_TO}")
+        return
 
     try:
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server: # Use defined SMTP constants.
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.ehlo()
             server.starttls()
             server.ehlo()
-            server.login(PYTHON_SENDER_EMAIL, EMAIL_PASS) # Use configured credentials.
+            server.login(PYTHON_SENDER_EMAIL, EMAIL_PASS)
             server.sendmail(PYTHON_SENDER_EMAIL, [PYTHON_CONFIRMATION_EMAIL_TO], msg.as_string())
         print(f"Confirmation email successfully sent to {PYTHON_CONFIRMATION_EMAIL_TO}.")
-    except (smtplib.SMTPException, socket.error) as e: # Catch specific SMTP and socket errors.
+    except (smtplib.SMTPException, socket.error) as e:
         print(f"[ERROR] SMTP error while sending confirmation email to {PYTHON_CONFIRMATION_EMAIL_TO}: {e}")
-    except Exception as e: # Catch any other unexpected errors.
+    except Exception as e:
         print(f"[ERROR] Unexpected error sending confirmation to {PYTHON_CONFIRMATION_EMAIL_TO}: {e}")
 
 
 # --- Main Execution Block ---
 if __name__ == '__main__':
     print('============== Initializing Script ==============')
+    if APP_DRY_RUN_ENABLED:
+        print("############################################################")
+        print("## TESTING/DRY-RUN MODE IS CURRENTLY ACTIVE FOR THIS SCRIPT ##")
+        print("## Emails will NOT actually be sent.                      ##")
+        print("############################################################")
 
     # Construct the database URL for SQLAlchemy.
     # It's important that DB_USER, DB_PASS, DB_HOST, DB_NAME are loaded from .env and validated prior to this.

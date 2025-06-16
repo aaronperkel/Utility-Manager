@@ -358,3 +358,101 @@ th.payment {
 .site-footer a {
     color: var(--primary);
 }
+
+/* ================ Pagination Styles ================ */
+nav.pagination {
+    background-color: transparent; /* Override default nav background if needed */
+    box-shadow: none;
+    margin-top: 2em; /* Space above pagination */
+    margin-bottom: 2em; /* Space below pagination */
+    text-align: center; /* Center the content (page summary and links list) */
+    color: var(--text-main);
+    font-size: 0.9rem;
+    padding: 0.5em; /* Remove padding if it interferes with text-align:center */
+}
+
+nav.pagination .pagination-links {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0; /* Space between "Page X of Y" and the links */
+    display: inline-block; /* Allows centering of the ul */
+}
+
+nav.pagination .pagination-links li {
+    display: inline; /* Display page links in a line */
+    margin: 0 3px; /* Spacing between page links/buttons */
+}
+
+nav.pagination .pagination-links a {
+    display: inline-block;
+    padding: 8px 12px;
+    border: 1px solid var(--bg-header); /* Subtle border */
+    color: var(--text-main);
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+nav.pagination .pagination-links a:hover {
+    background-color: var(--bg-header); /* Darken on hover */
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+nav.pagination .pagination-links a.active {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    font-weight: bold;
+    cursor: default; /* Indicate it's the current page */
+}
+
+/* ================ Bill Grouping Title Styles (index.php) ================ */
+.year-title { /* Already styled by .section-subtitle, this is for specificity or overrides */
+    margin-top: 1.5em; /* More space above a new year group */
+    margin-bottom: 0.5em;
+    /* font-size: 1.3em; /* If different size needed from .section-subtitle */
+}
+
+.item-group-title { /* For h4 elements like "Gas Bills", "Electric Bills" */
+    margin-top: 1em;  /* Space above the item sub-header */
+    margin-bottom: 0.5em; /* Space below the item sub-header, before its table */
+    font-size: 1.15em;
+    color: var(--text-main); /* Slightly less prominent than year perhaps, or same */
+    font-weight: 600; /* Make it noticeable */
+    padding-left: 0.5em; /* Optional: if tables have padding, align text slightly */
+    border-bottom: 1px solid var(--bg-header); /* Optional: visual separator */
+    padding-bottom: 0.25em; /* Space between text and border */
+}
+
+/* ================ Dry Run Mode Styles ================ */
+.dry-run-banner {
+    background-color: #5F3A0E; /* Dark orange/brown background */
+    color: #FEEBC8; /* Light orange/yellow text */
+    padding: 1em;
+    margin-bottom: 1.5em;
+    border: 1px solid #DD6B20; /* Orange border */
+    border-radius: 0.3em;
+    text-align: center;
+    font-weight: bold;
+}
+
+.dry-run-info {
+    background-color: #2D3748; /* Same as bg-panel for consistency */
+    color: #A0AEC0; /* Lighter gray text */
+    border: 1px dashed #4A5568; /* Dashed border to indicate informational/non-permanent */
+    padding: 1em;
+    margin-bottom: 1.5em;
+    border-radius: 0.3em;
+}
+
+.dry-run-info strong {
+    display: block;
+    margin-bottom: 0.5em;
+    color: #E2E8F0; /* Brighter text for the heading */
+}
+
+.dry-run-info ul {
+    list-style-position: inside;
+    padding-left: 0.5em;
+}

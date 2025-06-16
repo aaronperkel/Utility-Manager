@@ -320,68 +320,84 @@ if (!isAdminUser($currentRemoteUser, $appAdminUsersList)) {
 
 // Initialize arrays for holding error or success messages to be displayed to the user.
 $error_messages = [];
-$success_messages = []; // Note: success messages are typically set in session for display after redirect.
+$success_messages = [];
+$dry_run_messages = []; // For messages specific to dry-run mode actions.
+
+$is_dry_run_active = isDryRunActive(); // Check if dry-run mode is active.
 
 // --- POST Request Handling (Adding a new bill) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Verify CSRF token to prevent cross-site request forgery.
+    // Verify CSRF token.
     if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token_main_form'], $_POST['csrf_token'])) {
         $error_messages[] = "CSRF token validation failed. Please try submitting the form again.";
     } else {
-        // Regenerate CSRF token after successful validation to prevent token reuse for subsequent submissions.
+        // Regenerate CSRF token after successful validation.
         $_SESSION['csrf_token_main_form'] = bin2hex(random_bytes(32));
 
-        // Validate all submitted form data and file information.
+        // Validate submitted form data.
         $validationResult = validateBillSubmissionData($_POST, $_FILES, $allowedBillItems);
 
         if (!empty($validationResult['errors'])) {
-            // If validation errors exist, merge them into the main error messages array.
             $error_messages = array_merge($error_messages, $validationResult['errors']);
         } else {
-            // If validation passes, proceed with file upload and database insertion.
             $validatedPostData = $validationResult['data'];
-            $dbPath = null; // Will store the path to the uploaded file.
 
-            try {
-                // Handle the PDF file upload.
-                $dbPath = handleBillFileUpload(
-                    $_FILES['view'], // File data from the form.
-                    $validatedPostData['year'], // Year for directory structure.
-                    $validatedPostData['item'], // Item name for directory structure.
-                    $uploadBaseDir           // Base path for uploads.
-                );
+            if ($is_dry_run_active) {
+                // --- DRY-RUN MODE ACTIVE ---
+                $dry_run_messages[] = "DRY RUN: Form data validated successfully.";
 
-                // Insert the new bill record into the database.
-                if (!insertBillRecord($pdo, $validatedPostData, $dbPath, $defaultOweListStr)) {
-                    // If database insertion fails, add an error message.
-                    $error_messages[] = "Failed to insert bill into database. Please check logs or contact support.";
+                // Simulate file handling: Check if file appears valid based on initial checks.
+                if (isset($_FILES['view']) && $_FILES['view']['error'] === UPLOAD_ERR_OK) {
+                    // Further checks from handleBillFileUpload could be simulated here if needed,
+                    // e.g., file size, type based on $_FILES data directly.
+                    // For this exercise, we'll assume basic presence and no UPLOAD_ERR_* is sufficient for dry run.
+                    $dry_run_messages[] = "DRY RUN: File '" . htmlspecialchars($_FILES['view']['name']) . "' appears valid and would have been processed.";
                 } else {
-                    // If bill insertion is successful:
-                    include 'update_ics.php'; // Rebuild the iCalendar file.
-
-                    // Prepare configuration for sending notifications.
-                    $notificationConfig = [
-                        'emailMap' => $emailMapArray,
-                        'defaultOweArray' => $defaultOweListArray,
-                        'emailFromName' => $appEmailFromName,
-                        'emailFromAddress' => $appEmailFromAddress,
-                        'confirmationEmailTo' => $appConfirmationEmailTo,
-                        'baseUrl' => $appBaseUrl // Pass base URL for link generation.
-                    ];
-                    // Send email notifications to users and admin.
-                    sendBillNotifications($validatedPostData, $dbPath, $notificationConfig);
-
-                    // Set a success message in the session to be displayed after redirect (flash message).
-                    $_SESSION['success_message'] = "New bill successfully added!";
-                    // Redirect to the portal page (GET request) to prevent form resubmission on refresh.
-                    header('Location: portal.php');
-                    exit; // Terminate script execution after redirect.
+                    // This case should ideally be caught by validateBillSubmissionData, but as a fallback:
+                    $error_messages[] = "DRY RUN: File is missing or has an upload error.";
                 }
-            } catch (RuntimeException $e) { // Catch file upload specific errors.
-                $error_messages[] = "File handling error: " . htmlspecialchars($e->getMessage());
-            } catch (Exception $e) { // Catch any other unexpected errors.
-                error_log("General error during POST processing: " . $e->getMessage()); // Log the detailed error.
-                $error_messages[] = "An unexpected error occurred. Please try again or contact support if the issue persists.";
+
+                if(empty($error_messages)) { // Only add these if no file errors from above
+                    $dry_run_messages[] = "DRY RUN: Bill data would have been saved to the database.";
+                    $dry_run_messages[] = "DRY RUN: Calendar file (update_ics.php) would have been updated.";
+                    $dry_run_messages[] = "DRY RUN: Notifications would have been sent.";
+                }
+                // Do NOT redirect in dry-run mode; stay on page to show messages.
+            } else {
+                // --- LIVE MODE ---
+                $dbPath = null;
+                try {
+                    $dbPath = handleBillFileUpload(
+                        $_FILES['view'],
+                        $validatedPostData['year'],
+                        $validatedPostData['item'],
+                        $uploadBaseDir
+                    );
+
+                    if (!insertBillRecord($pdo, $validatedPostData, $dbPath, $defaultOweListStr)) {
+                        $error_messages[] = "Failed to insert bill into database. Please check logs or contact support.";
+                    } else {
+                        include 'update_ics.php'; // Rebuild calendar.
+                        $notificationConfig = [
+                            'emailMap' => $emailMapArray,
+                            'defaultOweArray' => $defaultOweListArray,
+                            'emailFromName' => $appEmailFromName,
+                            'emailFromAddress' => $appEmailFromAddress,
+                            'confirmationEmailTo' => $appConfirmationEmailTo,
+                            'baseUrl' => $appBaseUrl
+                        ];
+                        sendBillNotifications($validatedPostData, $dbPath, $notificationConfig);
+
+                        $_SESSION['success_message'] = "New bill successfully added!";
+                        header('Location: portal.php');
+                        exit;
+                    }
+                } catch (RuntimeException $e) {
+                    $error_messages[] = "File handling error: " . htmlspecialchars($e->getMessage());
+                } catch (Exception $e) {
+                    error_log("General error during POST processing: " . $e->getMessage());
+                    $error_messages[] = "An unexpected error occurred. Please try again or contact support if the issue persists.";
+                }
             }
         }
     }
@@ -389,14 +405,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // After POST processing or on a GET request, check for flash success messages from session.
 if (isset($_SESSION['success_message'])) {
-    $success_messages[] = $_SESSION['success_message']; // Add to messages to be displayed.
-    unset($_SESSION['success_message']); // Clear the message from session so it's only shown once.
+    $success_messages[] = $_SESSION['success_message'];
+    unset($_SESSION['success_message']);
+}
+// Check for dry run action messages from other scripts (like send_reminder.php)
+if (isset($_SESSION['dry_run_action_message'])) {
+    // Prepend to any dry_run_messages from this page's POST, or initialize if empty
+    $dry_run_messages = array_merge([$_SESSION['dry_run_action_message']], $dry_run_messages);
+    unset($_SESSION['dry_run_action_message']);
 }
 
 
 // --- GET Request Handling (Displaying bills and forms) ---
 
-// Pagination setup for the admin view of bills.
+// Pagination setup for admin view
 $billsPerPage = (int)($_ENV['APP_BILLS_PER_PAGE'] ?? 10); // Number of bills per page from .env or default.
 $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1; // Get current page from URL, default to 1.
 if ($currentPage < 1) { // Ensure current page is at least 1.
@@ -424,6 +446,13 @@ if (empty($_SESSION['csrf_token_list_forms'])) {
 $csrfTokenListForms = $_SESSION['csrf_token_list_forms'];
 ?>
 <main class="admin-area">
+
+    <?php if ($is_dry_run_active): ?>
+        <div class="messages dry-run-banner">
+            <strong>TESTING/DRY-RUN MODE IS CURRENTLY ACTIVE.</strong> No actual data changes will be made or emails sent from the 'Add New Bill' form.
+        </div>
+    <?php endif; ?>
+
     <h2 class="section-title">Admin Portal</h2>
 
     <?php if (!empty($error_messages)): ?>
@@ -441,6 +470,17 @@ $csrfTokenListForms = $_SESSION['csrf_token_list_forms'];
         <div class="messages success-messages">
             <ul>
                 <?php foreach ($success_messages as $msg): ?>
+                    <li><?= htmlspecialchars($msg) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($dry_run_messages)): ?>
+        <div class="messages dry-run-info">
+            <strong>Dry Run Information (No changes were made):</strong>
+            <ul>
+                <?php foreach ($dry_run_messages as $msg): ?>
                     <li><?= htmlspecialchars($msg) ?></li>
                 <?php endforeach; ?>
             </ul>
