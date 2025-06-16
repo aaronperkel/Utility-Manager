@@ -8,22 +8,15 @@ import time
 import os
 import json # For parsing JSON string from env
 import socket # For catching socket errors during SMTP operations
-
-# db.py
-# This script checks for unpaid utility bills and sends email reminders.
-# It connects to a database, queries for bills due soon, and uses SMTP to send emails.
-
-import smtplib
-import time
-import os
-import json # For parsing JSON string from env
-import socket # For catching socket errors during SMTP operations
 import datetime # Imported for type hinting and date operations
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
 
+# db.py
+# This script checks for unpaid utility bills and sends email reminders.
+# It connects to a database, queries for bills due soon, and uses SMTP to send emails.
 
 # Determine the base directory of the script for robust path construction.
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -51,7 +44,7 @@ if not loaded_path:
 
 # --- Configuration Loading & Validation ---
 # Load environment variables from .env file.
-APP_BASE_URL = os.getenv('APP_BASE_URL', 'https://utilities.example.com').rstrip('/') # Ensure no trailing slash
+APP_BASE_URL = os.getenv('APP_BASE_URL', 'https://utilities.example.com').rstrip('/')
 DB_HOST = os.getenv('DB_HOST', 'webdb.uvm.edu')
 DB_NAME = os.getenv('DB_NAME')
 DB_USER = os.getenv('DB_USER')
@@ -63,8 +56,12 @@ PYTHON_SENDER_EMAIL = os.getenv('PYTHON_SENDER_EMAIL')
 PYTHON_CONFIRMATION_EMAIL_TO = os.getenv('PYTHON_CONFIRMATION_EMAIL_TO')
 
 # Default DB_SSL_CA_PATH construction
-default_ca_path = os.path.join(script_dir, '..', '..', 'webdb-cacert.pem')
+default_ca_path = os.path.join(script_dir, '..', '..', 'webdb-cacert.pem') # Default path relative to project root
 DB_SSL_CA_PATH = os.getenv('DB_SSL_CA_PATH', default_ca_path)
+# Read DB_USE_SSL, defaulting to 'false' if not set, then convert to boolean.
+raw_db_use_ssl = os.getenv('DB_USE_SSL', 'false')
+DB_USE_SSL = raw_db_use_ssl.lower() in ['true', '1']
+
 
 # Load and parse APP_USER_EMAILS
 email_map_json = os.getenv('APP_USER_EMAILS', '{}')
@@ -289,18 +286,31 @@ if __name__ == '__main__':
     # It's important that DB_USER, DB_PASS, DB_HOST, DB_NAME are loaded from .env and validated prior to this.
     db_url = f"mysql+mysqlconnector://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
 
-    # Prepare SSL arguments for the database connection if a CA path is specified and exists.
+    # Prepare SSL arguments for the database connection based on DB_USE_SSL.
     ssl_args_dict = {}
-    if DB_SSL_CA_PATH:
-        if os.path.exists(DB_SSL_CA_PATH):
-            ssl_args_dict['ssl_ca'] = DB_SSL_CA_PATH
-            print(f"Using SSL CA for database connection: {DB_SSL_CA_PATH}")
+    if DB_USE_SSL:
+        print("[INFO] DB_USE_SSL is true. Attempting SSL connection for database.")
+        if DB_SSL_CA_PATH:
+            # Resolve potential relative path for DB_SSL_CA_PATH (e.g. if it's like "webdb-cacert.pem")
+            # Assumes if not absolute, it's relative to the project root (parent of script_dir's parent)
+            ca_path_to_check = DB_SSL_CA_PATH
+            if not os.path.isabs(ca_path_to_check):
+                # script_dir is src/scripts, so ../.. is project root
+                project_root = os.path.abspath(os.path.join(script_dir, '..', '..'))
+                ca_path_to_check = os.path.join(project_root, DB_SSL_CA_PATH)
+
+            if os.path.exists(ca_path_to_check) and os.access(ca_path_to_check, os.R_OK):
+                ssl_args_dict['ssl_ca'] = ca_path_to_check
+                print(f"[INFO] Using SSL CA certificate for database: {ca_path_to_check}")
+            else:
+                print(f"[WARN] DB_USE_SSL is true, but DB_SSL_CA_PATH ('{DB_SSL_CA_PATH}', resolved to '{ca_path_to_check}') is invalid or not readable. Attempting connection without client-side SSL CA verification.")
+                # Proceeding with empty ssl_args_dict for SSL, relies on server/driver defaults or system CAs.
         else:
-            # Log a warning if the CA path is specified but not found, then proceed without SSL verification by CA.
-            print(f"Warning: DB_SSL_CA_PATH '{DB_SSL_CA_PATH}' not found. Proceeding without SSL CA verification for database.")
+            print("[WARN] DB_USE_SSL is true, but DB_SSL_CA_PATH is not set. SSL connection will rely on server configuration and system CAs.")
+            # Proceeding with empty ssl_args_dict for SSL.
     else:
-        # Log if no CA path is set, proceeding without specific CA verification.
-        print("DB_SSL_CA_PATH not set. Proceeding without SSL CA verification for database.")
+        print("[INFO] DB_USE_SSL is false. Attempting connection without SSL for database.")
+        # ssl_args_dict remains empty, so SQLAlchemy won't attempt to use SSL explicitly.
 
     # Initialize the DatabaseManager.
     try:
