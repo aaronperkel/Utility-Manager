@@ -5,9 +5,27 @@
 
 session_start(); // Start session for CSRF token access and potential flash messages.
 include './connect-DB.php'; // Includes $pdo, and helper functions like isDryRunActive().
-// top.php is not strictly needed as this is an action script, but connect-DB.php is essential.
 
 $is_dry_run_active = isDryRunActive(); // Check dry-run status.
+$allPeople = []; // Initialize $allPeople
+
+// Fetch all people for determining who could owe.
+try {
+    $peopleStmt = $pdo->query("SELECT personID, personName FROM tblPeople ORDER BY personName ASC");
+    $allPeople = $peopleStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log("Error fetching people in update_owe.php: " . $e->getMessage());
+    $_SESSION['error_message'] = "Could not load user data. Payment status update failed.";
+    header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? 'portal.php'));
+    exit;
+}
+
+if (empty($allPeople)) {
+    $_SESSION['error_message'] = "No users found in the system (tblPeople is empty). Cannot update payment status.";
+    header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? 'portal.php'));
+    exit;
+}
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // 1. Verify CSRF token
@@ -19,13 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 2. Get Inputs
     $billID = filter_input(INPUT_POST, 'billID', FILTER_VALIDATE_INT);
-    // $paidPersonIDs will contain an array of personIDs for whom the checkbox was checked (meaning they "paid").
     $paidPersonIDs = $_POST['paidPersonIDs'] ?? [];
-    // Ensure $paidPersonIDs is an array, even if only one or no boxes are checked.
-    if (!is_array($paidPersonIDs)) {
-        $paidPersonIDs = [];
-    }
-    // Sanitize each ID in the array
+    if (!is_array($paidPersonIDs)) $paidPersonIDs = [];
     $paidPersonIDs = array_map('intval', $paidPersonIDs);
 
 
@@ -35,96 +48,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // 3. Fetch All People from tblPeople (to know the complete set of users)
-    try {
-        $peopleStmt = $pdo->query("SELECT personID, personName FROM tblPeople ORDER BY personName ASC");
-        $allPeople = $peopleStmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        error_log("Error fetching people in update_owe.php: " . $e->getMessage());
-        $_SESSION['error_message'] = "Could not load user data. Payment status update failed.";
-        header('Location: portal.php?bill_error_id=' . $billID);
-        exit;
-    }
-
-    if (empty($allPeople)) {
-        $_SESSION['error_message'] = "No users found in the system. Cannot update payment status.";
-        header('Location: portal.php?bill_error_id=' . $billID);
-        exit;
-    }
-
     $dryRunMessages = [];
-    $peopleStillOwingCount = 0;
 
-    // 4. Logic to update tblBillOwes and tblUtilities.fldStatus
+    // Fetch current global status of the bill to compare later for ics update
+    $currentBillGlobalStatus = 'Unpaid'; // Default
     try {
-        if (!$is_dry_run_active) {
-            $pdo->beginTransaction();
-        }
-
-        // First, get the current global status of the bill.
-        // We don't want to add people to tblBillOwes if the bill is already globally 'Paid'.
         $utilStatusStmt = $pdo->prepare("SELECT fldStatus FROM tblUtilities WHERE pmkBillID = :billID");
         $utilStatusStmt->execute([':billID' => $billID]);
-        $currentBillGlobalStatus = $utilStatusStmt->fetchColumn();
-
-        if ($currentBillGlobalStatus === 'Paid' && !$is_dry_run_active) {
-            // If the bill is already globally paid, we typically shouldn't be making people owe again,
-            // unless this action is specifically to "unpay" it.
-            // For now, if globally paid, we'll mostly just ensure tblBillOwes is clear for this bill.
-            // And if someone is marked as "unpaid" (checkbox unchecked), that's an issue.
-            // This logic might need refinement based on desired behavior for "unpaying" a globally paid bill.
-            // For simplicity here: if bill is globally 'Paid', then effectively everyone has paid.
-            // We will primarily clear any stragglers from tblBillOwes.
+        $statusResult = $utilStatusStmt->fetchColumn();
+        if ($statusResult !== false) {
+            $currentBillGlobalStatus = $statusResult;
+        } else {
+            // Bill ID not found, critical error
+            throw new Exception("Bill ID {$billID} not found in tblUtilities.");
         }
+    } catch (Exception $e) {
+        error_log("Error fetching bill status in update_owe.php for bill ID {$billID}: " . $e->getMessage());
+        $_SESSION['error_message'] = "Error fetching bill details: " . htmlspecialchars($e->getMessage());
+        header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? 'portal.php'));
+        exit;
+    }
 
-        $currentPeopleOwingForThisBill = 0;
+
+    // 4. Logic to update tblBillOwes and tblUtilities.fldStatus
+    $peopleActuallyOwingCount = 0; // For live mode, based on actual remaining entries
+    $simulatedPeopleOwingCount = 0; // For dry run mode
+
+    if ($is_dry_run_active) {
+        $dryRunMessages[] = "DRY RUN MODE: Simulating payment updates for bill ID: {$billID}. Current global status: {$currentBillGlobalStatus}.";
+        // Simulate changes to owing list
+        $currentOwingStmt = $pdo->prepare("SELECT personID FROM tblBillOwes WHERE billID = :billID");
+        $currentOwingStmt->execute([':billID' => $billID]);
+        $simulatedOwingPersonIDs = $currentOwingStmt->fetchAll(PDO::FETCH_COLUMN);
 
         foreach ($allPeople as $person) {
             $personID = $person['personID'];
-            $personName = $person['personName'];
+            $personName = htmlspecialchars($person['personName']);
+            $isCurrentlyOwing = in_array($personID, $simulatedOwingPersonIDs);
 
-            if (in_array($personID, $paidPersonIDs, true)) {
-                // This person is marked as "paid" (checkbox was checked).
-                // So, REMOVE their record from tblBillOwes for this billID.
-                if ($is_dry_run_active) {
-                    $dryRunMessages[] = "DRY RUN: Would REMOVE " . htmlspecialchars($personName) . " (ID: {$personID}) from owing for bill ID {$billID}.";
+            if (in_array($personID, $paidPersonIDs, true)) { // Person is marked as PAID by form
+                if ($isCurrentlyOwing) {
+                    $dryRunMessages[] = "DRY RUN: Would REMOVE {$personName} (ID: {$personID}) from owing this bill.";
                 } else {
-                    $stmtDelete = $pdo->prepare("DELETE FROM tblBillOwes WHERE billID = :billID AND personID = :personID");
-                    $stmtDelete->execute([':billID' => $billID, ':personID' => $personID]);
+                    // $dryRunMessages[] = "DRY RUN: {$personName} (ID: {$personID}) is already not owing (no change needed for this person).";
                 }
-            } else {
-                // This person is marked as "owing" (checkbox was NOT checked).
-                // So, ENSURE their record IS in tblBillOwes for this billID.
-                // The INSERT IGNORE handles cases where they might already be there.
-                // This action can potentially revert a globally 'Paid' bill to 'Unpaid'.
-                if ($is_dry_run_active) {
-                    $dryRunMessages[] = "DRY RUN: Would ADD/KEEP " . htmlspecialchars($personName) . " (ID: {$personID}) as owing for bill ID {$billID}. (Current global status: {$currentBillGlobalStatus})";
+            } else { // Person is marked as OWING by form
+                if (!$isCurrentlyOwing) {
+                     // Only add if bill is not globally 'Paid' OR if this action makes it 'Unpaid'
+                    $dryRunMessages[] = "DRY RUN: Would ADD {$personName} (ID: {$personID}) to owing this bill.";
                 } else {
-                    $stmtInsert = $pdo->prepare("INSERT IGNORE INTO tblBillOwes (billID, personID) VALUES (:billID, :personID)");
-                    $stmtInsert->execute([':billID' => $billID, ':personID' => $personID]);
+                    // $dryRunMessages[] = "DRY RUN: {$personName} (ID: {$personID}) is already owing (no change needed for this person).";
                 }
-                $currentPeopleOwingForThisBill++; // This person will contribute to the count of those owing.
+                $simulatedPeopleOwingCount++; // This person contributes to owing count
             }
         }
-
-        // Determine the new overall status based on whether anyone is left in tblBillOwes for this bill.
-        // This check is done AFTER all individual add/remove operations.
-        if (!$is_dry_run_active) { // For live mode, re-query tblBillOwes to get the true count after modifications.
-            $countStmt = $pdo->prepare("SELECT COUNT(*) FROM tblBillOwes WHERE billID = :billID");
-            $countStmt->execute([':billID' => $billID]);
-            $finalOwingCount = (int)$countStmt->fetchColumn();
-        } else { // For dry run, use the simulated count.
-            $finalOwingCount = $currentPeopleOwingForThisBill;
+        $finalSimulatedOwingCount = $simulatedPeopleOwingCount; // Based on form submission logic
+        $newOverallStatus = ($finalSimulatedOwingCount === 0) ? 'Paid' : 'Unpaid';
+        $dryRunMessages[] = "DRY RUN: Based on selections, {$finalSimulatedOwingCount} people would owe. Overall status for bill ID {$billID} would be updated to '{$newOverallStatus}'.";
+        if ($currentBillGlobalStatus !== $newOverallStatus) {
+             $dryRunMessages[] = "DRY RUN: Calendar file (update_ics.php) would have been updated due to status change.";
         }
+    } else { // Live Mode
+        try {
+            $pdo->beginTransaction();
 
-        $newOverallStatus = ($finalOwingCount === 0) ? 'Paid' : 'Unpaid';
+            // Clear existing entries for this bill in tblBillOwes
+            $stmtClearOwes = $pdo->prepare("DELETE FROM tblBillOwes WHERE billID = :billID");
+            $stmtClearOwes->execute([':billID' => $billID]);
 
-        if ($is_dry_run_active) {
-            $dryRunMessages[] = "DRY RUN: Based on selections, {$finalOwingCount} people would owe. Overall status for bill ID {$billID} would be set to '{$newOverallStatus}'.";
-            if ($currentBillGlobalStatus !== $newOverallStatus) {
-                 $dryRunMessages[] = "DRY RUN: Calendar file (update_ics.php) would have been updated due to status change.";
+            // Add back only those who are still marked as owing (i.e., NOT in $paidPersonIDs)
+            $stmtInsertOwe = $pdo->prepare("INSERT INTO tblBillOwes (billID, personID) VALUES (:billID, :personID)");
+            foreach ($allPeople as $person) {
+                if (!in_array($person['personID'], $paidPersonIDs, true)) {
+                    $stmtInsertOwe->execute([':billID' => $billID, ':personID' => $person['personID']]);
+                    $peopleActuallyOwingCount++;
+                }
             }
-        } else { // Live mode
+
+            $newOverallStatus = ($peopleActuallyOwingCount === 0) ? 'Paid' : 'Unpaid';
             $statusActuallyChanged = false;
             if ($currentBillGlobalStatus !== $newOverallStatus) {
                 $stmtUpdateStatus = $pdo->prepare("UPDATE tblUtilities SET fldStatus = :status WHERE pmkBillID = :id");
@@ -132,30 +133,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $statusActuallyChanged = true;
             }
 
-            $pdo->commit(); // Commit transaction
+            $pdo->commit();
 
             if ($statusActuallyChanged) {
-                include 'update_ics.php'; // Update calendar file only if global status actually changed.
+                include 'update_ics.php';
             }
-            $_SESSION['success_message'] = "Payment statuses for bill ID {$billID} updated successfully. Overall status: {$newOverallStatus}.";
-        }
+            $_SESSION['success_message'] = "Payment statuses for bill ID {$billID} updated. Overall status: {$newOverallStatus}.";
 
-        if ($is_dry_run_active && !empty($dryRunMessages)) {
-            $_SESSION['dry_run_action_message'] = implode("<br>", $dryRunMessages);
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            error_log("Error updating payment status for bill ID {$billID}: " . $e->getMessage());
+            $_SESSION['error_message'] = "Database error updating payment status. Details: " . htmlspecialchars($e->getMessage());
         }
+    }
 
-    } catch (PDOException $e) {
-        if (!$is_dry_run_active && isset($pdo) && $pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
-        error_log("Error updating payment status for bill ID {$billID}: " . $e->getMessage());
-        $_SESSION['error_message'] = "Database error updating payment status. Details: " . htmlspecialchars($e->getMessage());
-    } catch (Exception $e) {
-        if (!$is_dry_run_active && isset($pdo) && $pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
-        error_log("General error in update_owe.php for bill ID {$billID}: " . $e->getMessage());
-        $_SESSION['error_message'] = "An unexpected error occurred. Details: " . htmlspecialchars($e->getMessage());
+    if ($is_dry_run_active && !empty($dryRunMessages)) {
+        $_SESSION['dry_run_action_message'] = implode("<br>", $dryRunMessages);
     }
 
     // 5. Redirect back
@@ -163,7 +158,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 
 } else {
-    // If not a POST request, redirect to portal or show an error.
     $_SESSION['error_message'] = "Invalid request method for updating payment status.";
     header('Location: portal.php');
     exit;
