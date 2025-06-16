@@ -94,37 +94,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             } else {
                 // This person is marked as "owing" (checkbox was NOT checked).
-                // So, ENSURE their record IS in tblBillOwes for this billID,
-                // but ONLY if the bill is not globally 'Paid'.
-                if ($currentBillGlobalStatus !== 'Paid') {
-                    if ($is_dry_run_active) {
-                        $dryRunMessages[] = "DRY RUN: Would ADD/KEEP " . htmlspecialchars($personName) . " (ID: {$personID}) as owing for bill ID {$billID}.";
-                    } else {
-                        $stmtInsert = $pdo->prepare("INSERT IGNORE INTO tblBillOwes (billID, personID) VALUES (:billID, :personID)");
-                        $stmtInsert->execute([':billID' => $billID, ':personID' => $personID]);
-                    }
-                    $currentPeopleOwingForThisBill++; // Count this person as owing for this bill.
-                } elseif ($is_dry_run_active) {
-                     $dryRunMessages[] = "DRY RUN: Bill ID {$billID} is globally 'Paid'. " . htmlspecialchars($personName) . " (ID: {$personID}) would NOT be added/kept in tblBillOwes.";
+                // So, ENSURE their record IS in tblBillOwes for this billID.
+                // The INSERT IGNORE handles cases where they might already be there.
+                // This action can potentially revert a globally 'Paid' bill to 'Unpaid'.
+                if ($is_dry_run_active) {
+                    $dryRunMessages[] = "DRY RUN: Would ADD/KEEP " . htmlspecialchars($personName) . " (ID: {$personID}) as owing for bill ID {$billID}. (Current global status: {$currentBillGlobalStatus})";
+                } else {
+                    $stmtInsert = $pdo->prepare("INSERT IGNORE INTO tblBillOwes (billID, personID) VALUES (:billID, :personID)");
+                    $stmtInsert->execute([':billID' => $billID, ':personID' => $personID]);
                 }
+                $currentPeopleOwingForThisBill++; // This person will contribute to the count of those owing.
             }
         }
 
-        // After processing all people, update the global status of the bill in tblUtilities.
-        $newOverallStatus = ($currentPeopleOwingForThisBill === 0) ? 'Paid' : 'Unpaid';
+        // Determine the new overall status based on whether anyone is left in tblBillOwes for this bill.
+        // This check is done AFTER all individual add/remove operations.
+        if (!$is_dry_run_active) { // For live mode, re-query tblBillOwes to get the true count after modifications.
+            $countStmt = $pdo->prepare("SELECT COUNT(*) FROM tblBillOwes WHERE billID = :billID");
+            $countStmt->execute([':billID' => $billID]);
+            $finalOwingCount = (int)$countStmt->fetchColumn();
+        } else { // For dry run, use the simulated count.
+            $finalOwingCount = $currentPeopleOwingForThisBill;
+        }
+
+        $newOverallStatus = ($finalOwingCount === 0) ? 'Paid' : 'Unpaid';
 
         if ($is_dry_run_active) {
-            $dryRunMessages[] = "DRY RUN: Overall status for bill ID {$billID} would be updated to '{$newOverallStatus}'.";
+            $dryRunMessages[] = "DRY RUN: Based on selections, {$finalOwingCount} people would owe. Overall status for bill ID {$billID} would be set to '{$newOverallStatus}'.";
             if ($currentBillGlobalStatus !== $newOverallStatus) {
                  $dryRunMessages[] = "DRY RUN: Calendar file (update_ics.php) would have been updated due to status change.";
             }
-        } else {
+        } else { // Live mode
+            $statusActuallyChanged = false;
             if ($currentBillGlobalStatus !== $newOverallStatus) {
                 $stmtUpdateStatus = $pdo->prepare("UPDATE tblUtilities SET fldStatus = :status WHERE pmkBillID = :id");
                 $stmtUpdateStatus->execute([':status' => $newOverallStatus, ':id' => $billID]);
-                include 'update_ics.php'; // Update calendar file only if global status changed.
+                $statusActuallyChanged = true;
             }
-            $pdo->commit();
+
+            $pdo->commit(); // Commit transaction
+
+            if ($statusActuallyChanged) {
+                include 'update_ics.php'; // Update calendar file only if global status actually changed.
+            }
             $_SESSION['success_message'] = "Payment statuses for bill ID {$billID} updated successfully. Overall status: {$newOverallStatus}.";
         }
 
