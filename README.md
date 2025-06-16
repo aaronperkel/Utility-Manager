@@ -83,16 +83,16 @@ Note: Ensure the .env file is secured and not publicly accessible. Refer to .env
 
 ### 5. Initialize the Database
 
-Create your MySQL database (e.g., APERKEL_utilities). Then, use the table schemas provided in src/sql.php to set up your tables:
+Create your MySQL database (e.g., APERKEL_utilities). Then, use the table schemas provided in [src/sql.php](src/sql.php) to set up your tables:
 
 - tblPeople: Stores user information (personID, personName).
 - tblUtilities: Stores bill details (e.g., pmkBillID, fldDate, fldItem, fldTotal, fldCost, fldDue, fldStatus, fldView). The old fldOwe column has been removed.
 - tblBillOwes: A linking table (billID, personID) that tracks which person owes for which bill, replacing fldOwe.
-Refer to src/sql.php for the exact CREATE TABLE statements, example INSERT commands, guidance on migrating from the older schema (if applicable), and example queries for the new structure.
+Refer to [src/sql.php](src/sql.php) for the exact CREATE TABLE statements, example INSERT commands, guidance on migrating from the older schema (if applicable), and example queries for the new structure.
 
 ### 6. Set Up Cron for Automation (Automated Reminders)
 
-The Python script src/scripts/db.py sends automated email reminders. Set up a cron job (or equivalent scheduled task) to run this script daily.
+The Python script [src/scripts/db.py](src/scripts/db.py) sends automated email reminders. Set up a cron job (or equivalent scheduled task) to run this script daily.
 
 ## Example cron entry:
 
@@ -118,7 +118,8 @@ The Python script src/scripts/db.py sends automated email reminders. Set up a cr
 
 - Security: Several security enhancements like CSRF protection (on most forms) and improved input validation have been implemented. However, ongoing vigilance and adherence to security best practices are crucial. send_custom_email.php has a TODO note for CSRF protection.
 - Error Handling: The application includes improved error display mechanisms. For production environments, consider implementing more robust server-side logging (e.g., using Monolog for PHP, Python's logging module).
-- Database Schema: The database structure has been normalized (introducing tblPeople and tblBillOwes) for better data integrity and flexibility. See src/sql.php for details.
-License
+- Database Schema: The database structure has been normalized (introducing tblPeople and tblBillOwes) for better data integrity and flexibility. See [src/sql.php](src/sql.php) for details.
+
+## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
