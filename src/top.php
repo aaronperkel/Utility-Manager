@@ -1,9 +1,17 @@
 <!-- top.php -->
 <?php
-ob_start();
-$phpSelf = htmlspecialchars($_SERVER['PHP_SELF']);
-$pathParts = pathinfo($phpSelf);
+// This script starts output buffering, sets up global variables for page identification,
+// and includes the database connection script. It forms the top part of every HTML page.
 
+ob_start(); // Start output buffering. Useful for redirecting with header() calls even after some output.
+
+// Get the current script's filename without extension to identify the active page for navigation styling.
+$phpSelf = htmlspecialchars($_SERVER['PHP_SELF']); // Sanitize PHP_SELF.
+$pathParts = pathinfo($phpSelf); // Get path info, $pathParts['filename'] will be used in nav.php.
+
+// Establish database connection and load environment variables.
+// $pdo object becomes available globally in the scope of including scripts.
+// All .env variables are loaded into $_ENV.
 include 'connect-DB.php';
 ?>
 <!DOCTYPE HTML>
