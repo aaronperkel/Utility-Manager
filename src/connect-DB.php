@@ -137,4 +137,26 @@ function isDryRunActive(): bool {
     // Return true if current user is in the admin list, false otherwise.
     return in_array($currentUser, $adminUsersArray, true);
 }
+
+// --- Admin User Check Function ---
+/**
+ * Checks if a given user login is in the list of allowed admin logins.
+ * This function is used by pages like portal.php and send_custom_email.php
+ * to verify administrative privileges. The list of admins is typically loaded
+ * from an environment variable.
+ *
+ * @param string $currentUserLogin The login name of the user to check (e.g., from $_SERVER['REMOTE_USER']).
+ * @param array $allowedAdminLogins An array of admin login names.
+ * @return bool True if the user is an admin, false otherwise.
+ */
+function isAdminUser(string $currentUserLogin, array $allowedAdminLogins): bool
+{
+    // Ensure both parameters are not empty for a valid check.
+    if (empty($currentUserLogin) || empty($allowedAdminLogins)) {
+        return false;
+    }
+    // Check if the current user's login exists in the array of allowed admin logins.
+    // The third parameter 'true' ensures strict type checking.
+    return in_array($currentUserLogin, $allowedAdminLogins, true);
+}
 ?>

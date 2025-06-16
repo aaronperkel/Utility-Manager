@@ -407,24 +407,6 @@ nav.pagination .pagination-links a.active {
     cursor: default; /* Indicate it's the current page */
 }
 
-/* ================ Bill Grouping Title Styles (index.php) ================ */
-.year-title { /* Already styled by .section-subtitle, this is for specificity or overrides */
-    margin-top: 1.5em; /* More space above a new year group */
-    margin-bottom: 0.5em;
-    /* font-size: 1.3em; /* If different size needed from .section-subtitle */
-}
-
-.item-group-title { /* For h4 elements like "Gas Bills", "Electric Bills" */
-    margin-top: 1em;  /* Space above the item sub-header */
-    margin-bottom: 0.5em; /* Space below the item sub-header, before its table */
-    font-size: 1.15em;
-    color: var(--text-main); /* Slightly less prominent than year perhaps, or same */
-    font-weight: 600; /* Make it noticeable */
-    padding-left: 0.5em; /* Optional: if tables have padding, align text slightly */
-    border-bottom: 1px solid var(--bg-header); /* Optional: visual separator */
-    padding-bottom: 0.25em; /* Space between text and border */
-}
-
 /* ================ Dry Run Mode Styles ================ */
 .dry-run-banner {
     background-color: #5F3A0E; /* Dark orange/brown background */

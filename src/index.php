@@ -82,36 +82,28 @@ function getTotalBillCount(PDO $pdo): int
 }
 
 /**
- * Groups an array of bill records first by year, then by item type.
- * Years are sorted descending, and items alphabetically within each year.
+ * Groups an array of bill records by the year they were billed.
+ * The resulting array is sorted by year in descending order (most recent year first).
  *
  * @param array $bills An array of bill records (associative arrays).
- * @return array A nested array: Year -> Item -> [Bills].
+ * @return array An array where keys are years and values are arrays of bills for that year.
  */
-function groupBillsByYearAndItem(array $bills): array
+function groupBillsByYear(array $bills): array
 {
-    $billsByGroup = [];
+    $billsByYear = [];
     foreach ($bills as $bill) {
         try {
-            $dt = new DateTime($bill['fldDate']); // Assumes fldDate is in a format DateTime can parse.
-            $year = $dt->format('Y');
-            $item = $bill['fldItem']; // Get the item type.
-            $billsByGroup[$year][$item][] = $bill; // Group by year, then by item.
+            // Create a DateTime object from the bill's date string.
+            $dt = new DateTime($bill['fldDate']);
+            $year = $dt->format('Y'); // Extract the year.
+            $billsByYear[$year][] = $bill; // Add bill to the corresponding year's group.
         } catch (Exception $e) {
+            // Log error if date format is invalid and prevents DateTime creation.
             error_log("Invalid date format for bill (ID: " . ($bill['pmkBillID'] ?? 'N/A') . "): " . $bill['fldDate'] . " - " . $e->getMessage());
         }
     }
-
-    // Sort years descending.
-    krsort($billsByGroup);
-
-    // Sort items alphabetically within each year.
-    foreach ($billsByGroup as $year => &$itemsInYear) { // Pass $itemsInYear by reference.
-        ksort($itemsInYear); // Sort keys (item names) alphabetically.
-    }
-    unset($itemsInYear); // Unset reference.
-
-    return $billsByGroup;
+    krsort($billsByYear); // Sort the groups by year in reverse (descending) order.
+    return $billsByYear;
 }
 
 // --- Main Logic ---
@@ -157,8 +149,8 @@ if ($currentPage > $totalPages && $totalBills > 0) {
 
 // Fetch the bills for the current page using the calculated limit and offset.
 $billsForCurrentPage = getBillsForPage($pdo, $billsPerPage, $offset);
-// Group these paged bills by year and then by item for display.
-$groupedBills = groupBillsByYearAndItem($billsForCurrentPage);
+// Group these paged bills by year for display.
+$billsByYear = groupBillsByYear($billsForCurrentPage);
 
 ?>
 <main>
@@ -171,54 +163,50 @@ $groupedBills = groupBillsByYearAndItem($billsForCurrentPage);
     <?php if (empty($billsForCurrentPage)): ?>
         <p>No bills found for this page or no bills available.</p>
     <?php else: ?>
-        <?php foreach ($groupedBills as $year => $itemsInYear): ?>
-            <h3 class="section-subtitle year-title"><?= htmlspecialchars($year) ?></h3>
-            <?php foreach ($itemsInYear as $item => $itemBills): ?>
-                <h4 class="item-group-title"><?= htmlspecialchars($item) ?></h4>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
+        <?php foreach ($billsByYear as $year => $yearCells): ?>
+            <h3 class="section-subtitle"><?= htmlspecialchars($year) ?></h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date Billed</th>
+                            <th>Item</th>
+                            <th>Total</th>
+                            <th class="col-cost">Per Person</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>See Bill</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($yearCells as $cell):
+                            $owedList = array_map('trim', explode(',', $cell['fldOwe']));
+                            $isOwed = in_array($userName, $owedList);
+                            ?>
                             <tr>
-                                <th>Date Billed</th>
-                                <!-- Item column might be redundant if shown in sub-header, but kept for consistency -->
-                                <!-- <th>Item</th> -->
-                                <th>Total</th>
-                                <th class="col-cost">Per Person</th>
-                                <th>Due Date</th>
-                                <th>Status</th>
-                                <th>See Bill</th>
+                                <td><?= htmlspecialchars($cell['fldDate']) ?></td>
+                                <td><?= htmlspecialchars($cell['fldItem']) ?></td>
+                                <td>$<?= htmlspecialchars(number_format((float)$cell['fldTotal'], 2)) ?></td>
+                                <td class="col-cost">$<?= htmlspecialchars(number_format((float)$cell['fldCost'], 2)) ?></td>
+                                <td><?= htmlspecialchars($cell['fldDue']) ?></td>
+                                <td>
+                                    <?php if ($isOwed && $cell['fldStatus'] !== 'Paid'): // Check actual status too ?>
+                                        <span class="badge badge-unpaid">Unpaid</span>
+                                    <?php else: ?>
+                                        <span class="badge badge-paid">Paid</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <a href="<?= htmlspecialchars($cell['fldView']) ?>" target="_blank" class="icon-link">View</a>
+                                    |
+                                    <a href="<?= htmlspecialchars($cell['fldView']) ?>" download class="icon-link">Download</a>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($itemBills as $cell):
-                                $owedList = array_map('trim', explode(',', $cell['fldOwe']));
-                                $isOwed = in_array($userName, $owedList);
-                                ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($cell['fldDate']) ?></td>
-                                    <!-- <td><?= htmlspecialchars($cell['fldItem']) ?></td> -->
-                                    <td>$<?= htmlspecialchars(number_format((float)$cell['fldTotal'], 2)) ?></td>
-                                    <td class="col-cost">$<?= htmlspecialchars(number_format((float)$cell['fldCost'], 2)) ?></td>
-                                    <td><?= htmlspecialchars($cell['fldDue']) ?></td>
-                                    <td>
-                                        <?php if ($isOwed && $cell['fldStatus'] !== 'Paid'): // Check actual status too ?>
-                                            <span class="badge badge-unpaid">Unpaid</span>
-                                        <?php else: ?>
-                                            <span class="badge badge-paid">Paid</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <a href="<?= htmlspecialchars($cell['fldView']) ?>" target="_blank" class="icon-link">View</a>
-                                        |
-                                        <a href="<?= htmlspecialchars($cell['fldView']) ?>" download class="icon-link">Download</a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endforeach; // End item loop ?>
-        <?php endforeach; // End year loop ?>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endforeach; ?>
     <?php endif; ?>
 
     <?php if ($totalPages > 1): ?>
