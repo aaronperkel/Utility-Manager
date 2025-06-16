@@ -34,17 +34,6 @@ $allowedBillItems = ['Gas', 'Electric', 'Internet'];
 // --- Function Definitions ---
 
 /**
- * Checks if the currently logged-in user is an authorized admin.
- * @param string $currentUserLogin The username of the current user (e.g., from $_SERVER['REMOTE_USER']).
- * @param array $allowedAdminLogins An array of authorized admin usernames.
- * @return bool True if the user is an admin, false otherwise.
- */
-function isAdminUser(string $currentUserLogin, array $allowedAdminLogins): bool
-{
-    return !empty($currentUserLogin) && in_array($currentUserLogin, $allowedAdminLogins, true);
-}
-
-/**
  * Sanitizes a string by trimming whitespace and converting special characters to HTML entities.
  * @param string $s The input string.
  * @return string The sanitized string.
