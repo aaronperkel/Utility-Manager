@@ -8,14 +8,15 @@ include 'top.php'; // Includes header, navigation, and database connection (conn
 
 // --- Configuration Loading ---
 // Load application configuration from environment variables (loaded by connect-DB.php via Dotenv).
-$appBaseUrl = rtrim($_ENV['APP_BASE_URL'] ?? 'https://utilities.example.com', '/'); // Base URL for the application, ensure no trailing slash.
-$appAdminUsersStr = $_ENV['APP_ADMIN_USERS'] ?? ''; // Comma-separated string of admin usernames.
-$appAdminUsersList = !empty($appAdminUsersStr) ? array_map('trim', explode(',', $appAdminUsersStr)) : []; // Convert to array of admin users.
+$appBaseUrl = rtrim($_ENV['APP_BASE_URL'] ?? 'https://utilities.example.com', '/');
+$appAdminUsersStr = $_ENV['APP_ADMIN_USERS'] ?? '';
+$appAdminUsersList = !empty($appAdminUsersStr) ? array_map('trim', explode(',', $appAdminUsersStr)) : [];
 
-$defaultOweListStr = $_ENV['APP_USERS_OWING'] ?? 'Aaron,Owen,Ben'; // Default list of users who owe, as a string.
-$defaultOweListArray = array_map('trim', explode(',', $defaultOweListStr)); // Convert to array.
+// Note: APP_USERS_OWING (and $defaultOweListStr, $defaultOweListArray previously derived from it)
+// are no longer used for determining who owes on a new bill. All users from tblPeople are assigned by default.
+// It might still be used by sendBillNotifications if $allPeople isn't passed or is empty.
 
-$userEmailsJson = $_ENV['APP_USER_EMAILS'] ?? '{}'; // JSON string mapping user names to emails.
+$userEmailsJson = $_ENV['APP_USER_EMAILS'] ?? '{}';
 $emailMapArray = json_decode($userEmailsJson, true); // Decode JSON into an associative array.
 if (json_last_error() !== JSON_ERROR_NONE) { // Check for JSON decoding errors.
     error_log("Failed to parse APP_USER_EMAILS JSON: " . json_last_error_msg());
@@ -171,28 +172,31 @@ function handleBillFileUpload(array $fileInfo, string $year, string $itemValue, 
  * @param PDO $dbConnection The PDO database connection object.
  * @param array $billDetails Associative array of validated bill data (item, total, cost, billDate, dueDate, year).
  * @param string $filePath Relative path to the uploaded PDF file.
- * @param string $owingUsersList Comma-separated string of users who owe for this bill.
- * @return bool True on successful insertion, false otherwise.
+ * @param string $filePath Relative path to the uploaded PDF file.
+ * @return int|false The ID of the newly inserted bill on success, false on failure.
  */
-function insertBillRecord(PDO $dbConnection, array $billDetails, string $filePath, string $owingUsersList): bool
+function insertBillRecord(PDO $dbConnection, array $billDetails, string $filePath): int|false
 {
+    // fldOwe column is removed from tblUtilities
     $sql = "
         INSERT INTO tblUtilities
-          (fldDate, fldItem, fldTotal, fldCost, fldDue, fldStatus, fldView, fldOwe)
+          (fldDate, fldItem, fldTotal, fldCost, fldDue, fldStatus, fldView)
         VALUES
-          (:date, :item, :total, :cost, :due, 'Unpaid', :view, :owe) -- Default status is 'Unpaid'.
+          (:date, :item, :total, :cost, :due, 'Unpaid', :view) -- Default status is 'Unpaid'.
     ";
     $stmt = $dbConnection->prepare($sql);
-    // Bind parameters and execute.
-    return $stmt->execute([
+    $success = $stmt->execute([
         ':date' => $billDetails['billDate'],
         ':item' => $billDetails['item'],
         ':total' => $billDetails['total'],
         ':cost' => $billDetails['cost'],
         ':due' => $billDetails['dueDate'],
-        ':view' => sanitize($filePath), // Sanitize the file path before database insertion.
-        ':owe' => $owingUsersList,
+        ':view' => sanitize($filePath),
     ]);
+    if ($success) {
+        return (int)$dbConnection->lastInsertId();
+    }
+    return false;
 }
 
 /**
@@ -229,12 +233,20 @@ function sendBillNotifications(array $billDetails, string $dbPath, array $config
         . "Contact: " . htmlspecialchars($config['emailFromAddress']) . "</p>";
 
     $emailedRecipientsForConfirmation = []; // Track who was emailed for admin confirmation.
-    // Send email to each user in the default "owe" list who has a mapped email address.
-    if (!empty($config['emailMap'])) { // Check if email map is available.
-        foreach ($config['defaultOweArray'] as $personName) { // Iterate through users expected to owe.
-            if (isset($config['emailMap'][$personName])) { // Check if user has an email address.
+    // Send email to each user who is configured to receive notifications
+    $peopleToNotify = $config['peopleToNotify'] ?? []; // Expects array of ['personName' => ..., 'email' => ...] or similar.
+
+    if (!empty($config['emailMap']) && !empty($peopleToNotify)) {
+        // Ensure $peopleToNotify contains arrays with 'personName' key
+        foreach ($peopleToNotify as $person) {
+            if (!is_array($person) || !isset($person['personName'])) {
+                error_log("Invalid structure in peopleToNotify array for sendBillNotifications.");
+                continue;
+            }
+            $personName = $person['personName'];
+            if (isset($config['emailMap'][$personName])) {
                 $toEmail = $config['emailMap'][$personName];
-                if (!mail($toEmail, $subject, $body, $headers)) { // Send email.
+                if (!mail($toEmail, $subject, $body, $headers)) {
                     error_log("Mail to $toEmail failed for person $personName regarding bill item " . $billDetails['item']);
                 } else {
                     $emailedRecipientsForConfirmation[$personName] = $toEmail; // Record successful send.
@@ -271,9 +283,9 @@ function sendBillNotifications(array $billDetails, string $dbPath, array $config
 function getBillsForAdminPage(PDO $dbConnection, int $limit, int $offset): array
 {
     $sql = "
-      SELECT pmkBillID,fldDate,fldItem,fldTotal,fldCost,fldDue,fldStatus,fldView,fldOwe
+      SELECT pmkBillID,fldDate,fldItem,fldTotal,fldCost,fldDue,fldStatus,fldView -- fldOwe removed
         FROM tblUtilities
-       ORDER BY fldDate DESC -- Show most recent bills first.
+       ORDER BY fldDate DESC
        LIMIT :limit OFFSET :offset
     ";
     $stmt = $dbConnection->prepare($sql);
@@ -314,6 +326,17 @@ $dry_run_messages = []; // For messages specific to dry-run mode actions.
 
 $is_dry_run_active = isDryRunActive(); // Check if dry-run mode is active.
 
+// Fetch all people for use in forms and new bill assignment. This is done early.
+try {
+    $peopleStmt = $pdo->query("SELECT personID, personName FROM tblPeople ORDER BY personName ASC");
+    $allPeople = $peopleStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log("Error fetching people: " . $e->getMessage());
+    $allPeople = [];
+    $error_messages[] = "Critical: Could not load user data from tblPeople. Core functionality will be affected.";
+}
+
+
 // --- POST Request Handling (Adding a new bill) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Verify CSRF token.
@@ -334,24 +357,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($is_dry_run_active) {
                 // --- DRY-RUN MODE ACTIVE ---
                 $dry_run_messages[] = "DRY RUN: Form data validated successfully.";
-
-                // Simulate file handling: Check if file appears valid based on initial checks.
                 if (isset($_FILES['view']) && $_FILES['view']['error'] === UPLOAD_ERR_OK) {
-                    // Further checks from handleBillFileUpload could be simulated here if needed,
-                    // e.g., file size, type based on $_FILES data directly.
-                    // For this exercise, we'll assume basic presence and no UPLOAD_ERR_* is sufficient for dry run.
                     $dry_run_messages[] = "DRY RUN: File '" . htmlspecialchars($_FILES['view']['name']) . "' appears valid and would have been processed.";
                 } else {
-                    // This case should ideally be caught by validateBillSubmissionData, but as a fallback:
                     $error_messages[] = "DRY RUN: File is missing or has an upload error.";
                 }
-
-                if(empty($error_messages)) { // Only add these if no file errors from above
-                    $dry_run_messages[] = "DRY RUN: Bill data would have been saved to the database.";
+                if(empty($error_messages)) {
+                    $dry_run_messages[] = "DRY RUN: Bill data would have been saved to tblUtilities.";
+                    $dry_run_messages[] = "DRY RUN: Entries for each person in tblPeople would have been added to tblBillOwes.";
                     $dry_run_messages[] = "DRY RUN: Calendar file (update_ics.php) would have been updated.";
                     $dry_run_messages[] = "DRY RUN: Notifications would have been sent.";
                 }
-                // Do NOT redirect in dry-run mode; stay on page to show messages.
             } else {
                 // --- LIVE MODE ---
                 $dbPath = null;
@@ -363,13 +379,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $uploadBaseDir
                     );
 
-                    if (!insertBillRecord($pdo, $validatedPostData, $dbPath, $defaultOweListStr)) {
+                    $newBillId = insertBillRecord($pdo, $validatedPostData, $dbPath);
+
+                    if (!$newBillId) {
                         $error_messages[] = "Failed to insert bill into database. Please check logs or contact support.";
                     } else {
+                        // Bill inserted successfully, now populate tblBillOwes for all people
+                        if (!empty($allPeople)) {
+                            $stmtInsertOwes = $pdo->prepare("INSERT INTO tblBillOwes (billID, personID) VALUES (:billID, :personID)");
+                            foreach ($allPeople as $person) {
+                                if (is_array($person) && isset($person['personID'])) {
+                                    $stmtInsertOwes->execute([':billID' => $newBillId, ':personID' => $person['personID']]);
+                                } else {
+                                    error_log("Invalid person data structure for tblBillOwes insertion: " . print_r($person, true));
+                                }
+                            }
+                        } else {
+                            error_log("No people found in \$allPeople to populate tblBillOwes for new bill ID: $newBillId");
+                        }
+
                         include 'update_ics.php'; // Rebuild calendar.
+
+                        $peopleForNotification = [];
+                        if (!empty($allPeople)) {
+                            foreach($allPeople as $p) {
+                                if (isset($p['personName'])) {
+                                   $peopleForNotification[] = ['personName' => $p['personName']];
+                                }
+                            }
+                        }
+
                         $notificationConfig = [
                             'emailMap' => $emailMapArray,
-                            'defaultOweArray' => $defaultOweListArray,
+                            'peopleToNotify' => $peopleForNotification,
                             'emailFromName' => $appEmailFromName,
                             'emailFromAddress' => $appEmailFromAddress,
                             'confirmationEmailTo' => $appConfirmationEmailTo,
@@ -377,7 +419,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ];
                         sendBillNotifications($validatedPostData, $dbPath, $notificationConfig);
 
-                        $_SESSION['success_message'] = "New bill successfully added!";
+                        $_SESSION['success_message'] = "New bill successfully added and assigned to all users!";
                         header('Location: portal.php');
                         exit;
                     }
@@ -399,13 +441,12 @@ if (isset($_SESSION['success_message'])) {
 }
 // Check for dry run action messages from other scripts (like send_reminder.php)
 if (isset($_SESSION['dry_run_action_message'])) {
-    // Prepend to any dry_run_messages from this page's POST, or initialize if empty
     $dry_run_messages = array_merge([$_SESSION['dry_run_action_message']], $dry_run_messages);
     unset($_SESSION['dry_run_action_message']);
 }
 
-
 // --- GET Request Handling (Displaying bills and forms) ---
+// $allPeople is already fetched above.
 
 // Pagination setup for admin view
 $billsPerPage = (int)($_ENV['APP_BILLS_PER_PAGE'] ?? 10); // Number of bills per page from .env or default.
@@ -485,13 +526,14 @@ $csrfTokenListForms = $_SESSION['csrf_token_list_forms'];
                     <th>Total</th>
                     <th>Per Person</th>
                     <th>Due Date</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th>Overall Status</th> <!-- Changed from "Status" -->
+                    <th>Payment Status per Person</th> <!-- New column -->
+                    <th>Actions</th> <!-- Actions like View/Download -->
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($cells)): ?>
-                    <tr><td colspan="7">No bills found for this page.</td></tr>
+                    <tr><td colspan="8">No bills found for this page.</td></tr> <!-- Adjusted colspan -->
                 <?php else: ?>
                     <?php foreach ($cells as $c): ?>
                         <tr>
@@ -499,40 +541,53 @@ $csrfTokenListForms = $_SESSION['csrf_token_list_forms'];
                             <td><?= htmlspecialchars($c['fldItem']) ?></td>
                             <td>$<?= htmlspecialchars(number_format((float)$c['fldTotal'], 2)) ?></td>
                             <td>$<?= htmlspecialchars(number_format((float)$c['fldCost'], 2)) ?></td>
-                            <td>
+                            <td> <!-- Due Date & Reminder Button -->
                                 <?php if ($c['fldStatus'] !== 'Paid'): ?>
-                                    <form method="POST" action="send_reminder.php" style="margin:0">
+                                    <form method="POST" action="send_reminder.php" style="margin:0; display:inline;">
                                         <input type="hidden" name="csrf_token" value="<?= $csrfTokenListForms ?>">
                                         <input type="hidden" name="sendReminder" value="1">
                                         <input type="hidden" name="pmk" value="<?= htmlspecialchars((string)$c['pmkBillID']) ?>">
-                                        <button class="badge badge-unpaid">
+                                        <button type="submit" class="badge badge-unpaid" title="Send Reminder for <?= htmlspecialchars($c['fldDue']) ?>">
                                             <?= htmlspecialchars($c['fldDue']) ?>
                                         </button>
-                                    </form
+                                    </form>
                             <?php else: ?>
-                                <span class="badge badge-paid"><?= htmlspecialchars($c['fldDue']) ?></span>
+                                <span class="badge badge-paid" title="Bill is Paid"><?= htmlspecialchars($c['fldDue']) ?></span>
                             <?php endif; ?>
-                        </td>
-                        <td class="payment-cell">
-                            <form method="POST" action="update_owe.php" style="display:inline">
-                                <input type="hidden" name="csrf_token" value="<?= $csrfTokenListForms ?>">
-                                <input type="hidden" name="updateNames" value="1">
-                                <input type="hidden" name="id2" value="<?= htmlspecialchars((string)$c['pmkBillID']) ?>">
-                                <?php
-                                $currentOwedNames = array_map('trim', explode(',', $c['fldOwe']));
-                                // $defaultOweListArray now serves as the list of all possible users from config
-                                $paidThisBill = array_diff($defaultOweListArray, $currentOwedNames);
-                                foreach ($defaultOweListArray as $personName) {
-                                    $isChecked = in_array($personName, $paidThisBill) ? 'checked' : '';
-                                    // Sanitize personName for display and value attribute, though it comes from config
-                                    $safePersonName = htmlspecialchars($personName);
-                                    echo "<label><input type=\"checkbox\" name=\"paidPeople[]\" value=\"$safePersonName\" $isChecked> $safePersonName</label> ";
-                                }
-                                ?>
-                                <button>Update</button>
-                            </form>
-                        </td>
-                        <td>
+                            </td>
+                            <td> <!-- Overall Bill Status -->
+                                <span class="badge <?= strtolower($c['fldStatus']) === 'paid' ? 'badge-paid' : 'badge-unpaid' ?>">
+                                    <?= htmlspecialchars($c['fldStatus']) ?>
+                                </span>
+                            </td>
+                            <td class="payment-cell"> <!-- Per-person payment status form -->
+                                <form method="POST" action="update_owe.php" style="display:inline">
+                                    <input type="hidden" name="billID" value="<?= $c['pmkBillID'] ?>">
+                                    <input type="hidden" name="csrf_token" value="<?= $csrfTokenListForms ?>">
+                                    <?php
+                                    if (!empty($allPeople)) { // Ensure $allPeople is available
+                                        // Fetch personIDs who currently owe for this specific bill
+                                        $owesStmt = $pdo->prepare("SELECT personID FROM tblBillOwes WHERE billID = :billID");
+                                        $owesStmt->execute([':billID' => $c['pmkBillID']]);
+                                        $peopleOwingThisBillIDs = $owesStmt->fetchAll(PDO::FETCH_COLUMN);
+
+                                        foreach ($allPeople as $person):
+                                            $hasEffectivelyPaid = ($c['fldStatus'] === 'Paid') || !in_array($person['personID'], $peopleOwingThisBillIDs);
+                                    ?>
+                                        <label>
+                                            <input type="checkbox" name="paidPersonIDs[]" value="<?= $person['personID'] ?>" <?= $hasEffectivelyPaid ? 'checked' : '' ?>>
+                                            <?= htmlspecialchars($person['personName']) ?>
+                                        </label>
+                                    <?php
+                                        endforeach;
+                                    } else { // Fallback if $allPeople isn't loaded
+                                        echo "User list unavailable.";
+                                    }
+                                    ?>
+                                    <button type="submit">Update Payments</button>
+                                </form>
+                            </td>
+                            <td> <!-- View/Download Links -->
                             <a href="<?= htmlspecialchars("{$c['fldView']}") ?>" target="_blank"
                                 class="icon-link">View</a>
                             |
@@ -548,7 +603,7 @@ $csrfTokenListForms = $_SESSION['csrf_token_list_forms'];
 
     <?php if ($totalPages > 1): ?>
         <nav class="pagination">
-            Page <?= $currentPage ?> of <?= $totalPages ?>
+            <span class="pagination-summary-text">Page <?= $currentPage ?> of <?= $totalPages ?></span>
             <ul class="pagination-links">
                 <?php if ($currentPage > 1): ?>
                     <li><a href="?page=<?= $currentPage - 1 ?>">Previous</a></li>

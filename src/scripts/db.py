@@ -115,43 +115,37 @@ class DatabaseManager:
 
     def get_unpaid_bills(self) -> list:
         """
-        Fetches all unpaid bills (due date and list of people who owe).
-        Returns a list of tuples (due_date, fldOwe_string) or an empty list on error.
+        Fetches details for all unpaid bills, including who owes for them.
+        Returns a list of dictionaries, each containing:
+        'due_date', 'person_name', 'item', 'total_bill_amount', 'cost_per_person', 'bill_id'
+        Returns an empty list on error.
         """
         try:
-            # Use a context manager for session lifecycle.
             with self.SessionLocal() as session:
-                # Execute raw SQL query using SQLAlchemy's text() for safety.
-                result = session.execute(text("SELECT fldDue, fldOwe FROM tblUtilities WHERE fldStatus = 'Unpaid'"))
-                return result.all() # Returns a list of Row objects.
+                sql_query = text("""
+                    SELECT
+                        u.fldDue AS due_date,
+                        p.personName AS person_name,
+                        u.fldItem AS item,
+                        u.fldTotal AS total_bill_amount,
+                        u.fldCost AS cost_per_person,
+                        u.pmkBillID as bill_id
+                    FROM tblUtilities u
+                    JOIN tblBillOwes bo ON u.pmkBillID = bo.billID
+                    JOIN tblPeople p ON bo.personID = p.personID
+                    WHERE u.fldStatus <> 'Paid'
+                    ORDER BY u.fldDue, p.personName;
+                """)
+                result = session.execute(sql_query)
+                # Convert Row objects to dictionaries for easier access
+                return [row._asdict() for row in result.all()]
         except Exception as e:
-            print(f"Error fetching unpaid bills: {e}")
+            print(f"Error fetching unpaid bills with details: {e}")
             return []
 
-    def get_bill_details_for_reminder(self, due_date: datetime.date, person: str) -> tuple | None:
-        """
-        Fetches bill total and per-person cost for a specific bill and person.
-        `due_date` should be a datetime.date object.
-        Returns a tuple (total_cost, per_person_cost) or None if not found or on error.
-        """
-        try:
-            with self.SessionLocal() as session:
-                # Parameterized query to prevent SQL injection.
-                # SQLAlchemy handles conversion of datetime.date to appropriate string for MySQL.
-                row = session.execute(
-                    text("""
-                        SELECT fldTotal, fldCost
-                        FROM tblUtilities
-                        WHERE fldDue = :due
-                        AND FIND_IN_SET(:person, REPLACE(fldOwe, ' ', ''))
-                    """),
-                    {"due": due_date, "person": person} # Pass parameters for binding.
-                ).fetchone() # Expecting one row or None.
-                return row if row else None
-        except Exception as e:
-            print(f"Error fetching bill details for reminder (date: {due_date}, person: {person}): {e}")
-            return None
-
+    # get_bill_details_for_reminder is no longer needed as get_unpaid_bills fetches all required info.
+    # If it were to be kept, it would need to be updated for the new schema or removed.
+    # For this refactor, we assume it's removed/obsolete.
 
 # --- Global Variables & Constants ---
 DATE_FORMAT_STR = "%Y-%m-%d" # Standard date format string for display.
@@ -160,27 +154,25 @@ SMTP_PORT = 587 # Standard SMTP port for TLS.
 db_manager = None # Global instance of DatabaseManager, initialized in main().
 
 # --- Email Functions ---
-def get_email_body(due_date_str: str, total: float, cost: float, app_base_url: str, from_name: str, from_contact_email: str) -> str:
+def get_email_body(due_date_str: str, item_str: str, total: float, cost: float, app_base_url: str, from_name: str, from_contact_email: str) -> str:
     """
     Generates the HTML body for reminder emails.
-    Formats the due date and includes bill details and a link to the portal.
+    Formats the due date and includes bill item, details, and a link to the portal.
     """
     try:
-        # Convert YYYY-MM-DD string to a more readable date format for the email body.
         date_obj = datetime.datetime.strptime(due_date_str, DATE_FORMAT_STR)
-        readable_due_date = date_obj.strftime("%B %d, %Y") # e.g., "January 15, 2024"
+        readable_due_date = date_obj.strftime("%B %d, %Y")
     except ValueError:
-        readable_due_date = due_date_str # Fallback to original string if parsing fails.
+        readable_due_date = due_date_str
 
-    portal_link = f"{app_base_url}/index.php" # Construct link to the main portal page.
+    portal_link = f"{app_base_url}/index.php"
 
-    # HTML structure for the email body.
     return f"""
 <p style="font: 14pt serif;">Hello,</p>
-<p style="font: 14pt serif;">This is a reminder that your utility bill is due on {readable_due_date}.</p>
+<p style="font: 14pt serif;">This is a reminder that your <strong>{item_str}</strong> bill is due on {readable_due_date}.</p>
 <ul>
     <li style="font: 14pt serif;">Bill total: ${total:.2f}</li>
-    <li style="font: 14pt serif;">Cost per person: ${cost:.2f}</li>
+    <li style="font: 14pt serif;">Your share: ${cost:.2f}</li>
 </ul>
 <p style="font: 14pt serif;">
     Please login to
@@ -193,49 +185,28 @@ def get_email_body(due_date_str: str, total: float, cost: float, app_base_url: s
 </p>
 """
 
-def send_email(bill_date_obj: datetime.date, person_name: str, bill_total: float, cost_per_person: float) -> bool:
+def send_email(recipient_email: str, subject: str, body_html: str) -> bool:
     """
-    Sends a reminder email for a specific bill to a specific person.
+    Sends an email using configured SMTP settings.
     Returns True if email sent successfully, False otherwise.
     """
-    global DATE_FORMAT_STR, APP_BASE_URL, EMAIL_MAP, APP_EMAIL_FROM_NAME, PYTHON_SENDER_EMAIL, EMAIL_PASS
+    global APP_EMAIL_FROM_NAME, PYTHON_SENDER_EMAIL, EMAIL_PASS # Globals for sender info
 
-    recipient_email = EMAIL_MAP.get(person_name)
-    if not recipient_email:
-        print(f"[WARN] No email address found for {person_name} in EMAIL_MAP. Skipping reminder email.")
+    if not recipient_email: # Should be pre-validated by caller
+        print(f"[WARN] No recipient email address provided. Skipping email.")
         return False
 
-    # Determine email subject based on urgency.
-    days_left = (bill_date_obj - datetime.date.today()).days
-    subject = 'URGENT: Utility Bill Reminder' if days_left <= 3 else 'Utility Bill Reminder'
-
-    # Format bill date to string for use in email body.
-    bill_date_str_formatted = bill_date_obj.strftime(DATE_FORMAT_STR)
-
-    # Generate email body content.
-    body = get_email_body(
-        due_date_str=bill_date_str_formatted,
-        total=bill_total,
-        cost=cost_per_person,
-        app_base_url=APP_BASE_URL,
-        from_name=APP_EMAIL_FROM_NAME,
-        from_contact_email=PYTHON_SENDER_EMAIL
-    )
-
-    # Create MIMEText object for HTML email.
-    msg = MIMEText(body, 'html')
+    msg = MIMEText(body_html, 'html')
     msg['Subject'] = subject
-    msg['From']    = f"{APP_EMAIL_FROM_NAME} <{PYTHON_SENDER_EMAIL}>" # Use configured sender name and email.
+    msg['From']    = f"{APP_EMAIL_FROM_NAME} <{PYTHON_SENDER_EMAIL}>"
     msg['To']      = recipient_email
 
-    # Attempt to send the email using SMTP, or simulate if in dry-run mode.
     if APP_DRY_RUN_ENABLED:
-        print(f"[DRY RUN] Would send reminder to: {person_name} ({recipient_email}) for bill due on {bill_date_str_formatted}.")
+        print(f"[DRY RUN] Would send email to: {recipient_email}")
         print(f"[DRY RUN] Subject: '{subject}'")
-        # print(f"[DRY RUN] Body (first 100 chars): {body[:100]}...") # Optionally print part of the body
-        # In dry-run, simulate that confirmation would also be sent.
-        send_confirmation_email(recipient_email, subject, body, dry_run=True)
-        return True # Simulate success for dry run flow
+        # print(f"[DRY RUN] Body (first 100 chars): {body_html[:100]}...")
+        send_confirmation_email(recipient_email, subject, body_html, dry_run=True)
+        return True
 
     try:
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
@@ -244,29 +215,28 @@ def send_email(bill_date_obj: datetime.date, person_name: str, bill_total: float
             server.ehlo()
             server.login(PYTHON_SENDER_EMAIL, EMAIL_PASS)
             server.sendmail(PYTHON_SENDER_EMAIL, [recipient_email], msg.as_string())
-        print(f"Reminder email successfully sent to {person_name} ({recipient_email}) for bill due on {bill_date_str_formatted}.")
+        print(f"Email successfully sent to {recipient_email} with subject '{subject}'.")
 
         send_confirmation_email(
             original_recipient=recipient_email,
             original_subject=subject,
-            original_email_body=body,
-            dry_run=False # Live confirmation
+            original_email_body=body_html,
+            dry_run=False
         )
         return True
     except (smtplib.SMTPException, socket.error) as e:
-        print(f"[ERROR] SMTP error while sending reminder to {person_name} ({recipient_email}): {e}")
+        print(f"[ERROR] SMTP error while sending email to {recipient_email}: {e}")
         return False
     except Exception as e:
-        print(f"[ERROR] Unexpected error sending reminder to {person_name} ({recipient_email}): {e}")
+        print(f"[ERROR] Unexpected error sending email to {recipient_email}: {e}")
         return False
 
 
 def send_confirmation_email(original_recipient: str, original_subject: str, original_email_body: str, dry_run: bool = False):
     """Sends a confirmation email to the admin about the reminder that was sent.
        If dry_run is True, it simulates sending."""
-    global APP_EMAIL_FROM_NAME, PYTHON_SENDER_EMAIL, PYTHON_CONFIRMATION_EMAIL_TO, EMAIL_PASS # Added EMAIL_PASS
+    global APP_EMAIL_FROM_NAME, PYTHON_SENDER_EMAIL, PYTHON_CONFIRMATION_EMAIL_TO, EMAIL_PASS
     confirmation_subject = 'Notification Sent Confirmation (Utility Bills Script)'
-    # HTML body for the confirmation email.
     confirmation_body = f"""<p style="font: 12pt monospace;">A reminder email was sent via the Utility Bills Script.</p>
 <hr>
 <p style="font: 12pt monospace;"><b>Original Recipient:</b> {original_recipient}</p>
@@ -275,10 +245,9 @@ def send_confirmation_email(original_recipient: str, original_subject: str, orig
 <p style="font: 12pt monospace;">--- Original Email Body ---</p>
 {original_email_body}
 """
-
     msg = MIMEText(confirmation_body, 'html')
     msg['Subject'] = confirmation_subject
-    msg['From'] = f"{APP_EMAIL_FROM_NAME} Script Notifier <{PYTHON_SENDER_EMAIL}>" # Use configured sender.
+    msg['From'] = f"{APP_EMAIL_FROM_NAME} Script Notifier <{PYTHON_SENDER_EMAIL}>"
     msg['To'] = PYTHON_CONFIRMATION_EMAIL_TO
 
     if dry_run:
@@ -308,20 +277,14 @@ if __name__ == '__main__':
         print("## Emails will NOT actually be sent.                      ##")
         print("############################################################")
 
-    # Construct the database URL for SQLAlchemy.
-    # It's important that DB_USER, DB_PASS, DB_HOST, DB_NAME are loaded from .env and validated prior to this.
     db_url = f"mysql+mysqlconnector://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
 
-    # Prepare SSL arguments for the database connection based on DB_USE_SSL.
     ssl_args_dict = {}
     if DB_USE_SSL:
         print("[INFO] DB_USE_SSL is true. Attempting SSL connection for database.")
         if DB_SSL_CA_PATH:
-            # Resolve potential relative path for DB_SSL_CA_PATH (e.g. if it's like "webdb-cacert.pem")
-            # Assumes if not absolute, it's relative to the project root (parent of script_dir's parent)
             ca_path_to_check = DB_SSL_CA_PATH
             if not os.path.isabs(ca_path_to_check):
-                # script_dir is src/scripts, so ../.. is project root
                 project_root = os.path.abspath(os.path.join(script_dir, '..', '..'))
                 ca_path_to_check = os.path.join(project_root, DB_SSL_CA_PATH)
 

@@ -361,21 +361,30 @@ th.payment {
 
 /* ================ Pagination Styles ================ */
 nav.pagination {
-    background-color: transparent; /* Override default nav background if needed */
+    display: flex; /* Use flexbox for alignment */
+    justify-content: center; /* Center items horizontally */
+    align-items: center; /* Align items vertically */
+    background-color: transparent;
     box-shadow: none;
-    margin-top: 2em; /* Space above pagination */
-    margin-bottom: 2em; /* Space below pagination */
-    text-align: center; /* Center the content (page summary and links list) */
+    margin-top: 2em;
+    margin-bottom: 2em;
     color: var(--text-main);
     font-size: 0.9rem;
-    padding: 0.5em; /* Remove padding if it interferes with text-align:center */
+    padding: 0.5em;
+    gap: 15px; /* Adds space between summary text and links list */
+}
+
+span.pagination-summary-text {
+    /* Inherits color and font-size from nav.pagination */
+    /* No specific styling needed unless different appearance from links is desired */
+    /* margin-right: 15px; /* Replaced by gap on parent */
 }
 
 nav.pagination .pagination-links {
     list-style: none;
     padding: 0;
-    margin: 10px 0 0 0; /* Space between "Page X of Y" and the links */
-    display: inline-block; /* Allows centering of the ul */
+    margin: 0; /* Reset margin as flex gap will handle spacing */
+    /* display: inline-block; /* Not needed with flex parent */
 }
 
 nav.pagination .pagination-links li {

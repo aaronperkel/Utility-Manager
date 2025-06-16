@@ -33,23 +33,32 @@ if (isset($_POST['sendReminder'])) {
     $appEmailFromName = $_ENV['APP_EMAIL_FROM_NAME'] ?? '81 Buell Utilities';
     $appConfirmationEmailTo = $_ENV['APP_CONFIRMATION_EMAIL_TO'] ?? 'admin@example.com';
 
-    // Fetch bill details from the database.
-    $stmt = $pdo->prepare(
-        'SELECT fldDue, fldOwe, fldItem, fldTotal, fldCost
+    // Fetch bill details from the database (fldOwe is no longer in tblUtilities).
+    $billDetailsStmt = $pdo->prepare(
+        'SELECT pmkBillID, fldDue, fldItem, fldTotal, fldCost
          FROM tblUtilities WHERE pmkBillID = :id'
     );
-    $stmt->execute([':id' => $billId]);
-    $bill = $stmt->fetch(PDO::FETCH_ASSOC);
+    $billDetailsStmt->execute([':id' => $billId]);
+    $bill = $billDetailsStmt->fetch(PDO::FETCH_ASSOC);
 
     $dryRunActionMessage = ""; // To accumulate messages for dry run
 
     if ($bill) {
-        $billDueDate = $bill['fldDue']; // Date string e.g. YYYY-MM-DD
+        $billDueDate = $bill['fldDue'];
         $billItem = $bill['fldItem'];
         $billTotal = (float)$bill['fldTotal'];
         $billCostPerPerson = (float)$bill['fldCost'];
 
-        $owedPeopleList = array_map('trim', explode(',', $bill['fldOwe']));
+        // Fetch people who owe for this specific bill from tblBillOwes and tblPeople.
+        $peopleOwingStmt = $pdo->prepare("
+            SELECT p.personName
+            FROM tblPeople p
+            JOIN tblBillOwes bo ON p.personID = bo.personID
+            WHERE bo.billID = :billID
+        ");
+        $peopleOwingStmt->execute([':billID' => $billId]);
+        // Get a list of names of people who owe for this bill.
+        $owedPeopleNameList = $peopleOwingStmt->fetchAll(PDO::FETCH_COLUMN);
 
         // Determine subject urgency based on due date.
         try {
@@ -73,24 +82,35 @@ if (isset($_POST['sendReminder'])) {
         ]) . "\r\n";
 
         $portalLink = $appBaseUrl . '/index.php';
-        $sentToForConfirmation = [];
+        $sentToForConfirmation = []; // Stores "Name <Email>" for admin confirmation
 
-        foreach ($owedPeopleList as $name) {
-            if (empty($name) || !isset($emailMapArray[$name])) {
-                error_log("Skipping reminder for '{$name}' (Bill ID: {$billId}): name is empty or not in email map.");
+        if (empty($owedPeopleNameList) && !$is_dry_run_active) {
+            // If no one owes (e.g., bill already marked paid or tblBillOwes is empty for this bill),
+            // no individual reminders to send. Maybe send a different admin note or log.
+            error_log("No one currently owes for bill ID {$billId} (Item: {$billItem}). No reminders sent.");
+        } elseif ($is_dry_run_active && empty($owedPeopleNameList)) {
+            $dryRunActionMessage .= "DRY RUN: No one currently listed as owing for bill '" . htmlspecialchars($billItem) . "' (ID: {$billId}). No reminder simulations for individuals.<br>";
+        }
+
+
+        foreach ($owedPeopleNameList as $personName) {
+            if (empty($personName) || !isset($emailMapArray[$personName])) {
+                error_log("Skipping reminder for '{$personName}' (Bill ID: {$billId}): name is empty or not in email map.");
                 continue;
             }
-            $toEmailAddress = $emailMapArray[$name];
+            $toEmailAddress = $emailMapArray[$personName];
 
             $formattedDueDate = "";
             try {
+                // Format due date for email body
                 $dateObjForBody = new DateTime($billDueDate);
-                $formattedDueDate = $dateObjForBody->format("F j, Y");
+                $formattedDueDate = $dateObjForBody->format("F j, Y"); // e.g., "July 15, 2024"
             } catch(Exception $e){
-                $formattedDueDate = $billDueDate; // Fallback to original string
+                $formattedDueDate = $billDueDate; // Fallback to YYYY-MM-DD string
             }
 
-            $body = "<p style=\"font:14pt serif;\">Hello " . htmlspecialchars($name) . ",</p>"
+            // Construct email body for each person.
+            $body = "<p style=\"font:14pt serif;\">Hello " . htmlspecialchars($personName) . ",</p>"
                 . "<p style=\"font:14pt serif;\">This is a reminder that your <strong>" . htmlspecialchars($billItem) . "</strong> bill (total: $" . number_format($billTotal, 2) . ") is due on " . htmlspecialchars($formattedDueDate) . ".</p>"
                 . "<p style=\"font:14pt serif;\">Your share is: $" . number_format($billCostPerPerson, 2) . ".</p>"
                 . "<p style=\"font:14pt serif;\">Please login to <a href=\"" . htmlspecialchars($portalLink) . "\">" . htmlspecialchars($appEmailFromName) . " Portal</a> for more info.</p>"
@@ -98,24 +118,38 @@ if (isset($_POST['sendReminder'])) {
                 . "Contact: " . htmlspecialchars($appEmailFromAddress) . "</p>";
 
             if ($is_dry_run_active) {
-                $dryRunActionMessage .= "DRY RUN: Reminder for bill '" . htmlspecialchars($billItem) . "' (Due: " . htmlspecialchars($billDueDate) . ") would have been sent to " . htmlspecialchars($name) . " (" . htmlspecialchars($toEmailAddress) . "). Subject: " . $subject . "<br>";
+                $dryRunActionMessage .= "DRY RUN: Reminder for bill '" . htmlspecialchars($billItem) . "' (Due: " . htmlspecialchars($billDueDate) . ") would have been sent to " . htmlspecialchars($personName) . " (" . htmlspecialchars($toEmailAddress) . "). Subject: " . $subject . "<br>";
             } else {
                 if (!mail($toEmailAddress, $subject, $body, $headers)) {
                     error_log("Mail to {$toEmailAddress} failed for bill ID {$billId}, item {$billItem}.");
                 } else {
-                    $sentToForConfirmation[] = $name . " <" . $toEmailAddress . ">";
+                    $sentToForConfirmation[] = htmlspecialchars($personName) . " &lt;" . htmlspecialchars($toEmailAddress) . "&gt;";
                 }
             }
         }
 
         // Admin confirmation email
-        if (count($owedPeopleList) > 0 && !empty($appConfirmationEmailTo)) { // Only send if reminders were attempted for non-empty owed list
-            $confirmSubject = ($is_dry_run_active ? "[DRY RUN] " : "") . "Reminder Batch Sent: " . htmlspecialchars($billItem) . " due " . htmlspecialchars($billDueDate);
-            $sentListStr = empty($sentToForConfirmation) && !$is_dry_run_active ? 'None (or all failed, check logs)' : htmlspecialchars(implode(', ', $is_dry_run_active ? $owedPeopleList : $sentToForConfirmation));
+        // Send confirmation if reminders were processed (even in dry run for simulation details)
+        // or if the list of people owing was initially not empty.
+        if (!empty($owedPeopleNameList) && !empty($appConfirmationEmailTo)) {
+            $confirmSubject = ($is_dry_run_active ? "[DRY RUN] " : "") . "Reminder Batch Processed: " . htmlspecialchars($billItem) . " due " . htmlspecialchars($billDueDate);
 
-            $confirmBody = "<p style=\"font:12pt monospace;\">Reminder emails were " . ($is_dry_run_active ? "simulated" : "sent") . " for the " . htmlspecialchars($billItem) . " bill (due " . htmlspecialchars($billDueDate) . ").</p>"
+            $processedListStr = "";
+            if ($is_dry_run_active) {
+                // In dry run, list all people who would have been processed.
+                $tempDryRunRecipients = [];
+                foreach($owedPeopleNameList as $pName) {
+                    $tempDryRunRecipients[] = htmlspecialchars($pName) . (isset($emailMapArray[$pName]) ? " (&lt;" . htmlspecialchars($emailMapArray[$pName]) . "&gt;)" : " (No email in map)");
+                }
+                $processedListStr = empty($tempDryRunRecipients) ? 'None (no one found in tblBillOwes or email map issues)' : implode(', ', $tempDryRunRecipients);
+            } else {
+                // In live mode, list who emails were actually sent to.
+                $processedListStr = empty($sentToForConfirmation) ? 'None (or all failed, check logs)' : implode(', ', $sentToForConfirmation);
+            }
+
+            $confirmBody = "<p style=\"font:12pt monospace;\">Reminder emails were " . ($is_dry_run_active ? "simulated" : "processed") . " for the " . htmlspecialchars($billItem) . " bill (due " . htmlspecialchars($billDueDate) . ").</p>"
                 . "<hr>"
-                . "<p style=\"font:12pt monospace;\">Attempted to process for: {$sentListStr}</p>"
+                . "<p style=\"font:12pt monospace;\">Processed for: {$processedListStr}</p>"
                 . "<p style=\"font:12pt monospace;\">Original Subject: {$subject}</p>";
 
             if ($is_dry_run_active) {

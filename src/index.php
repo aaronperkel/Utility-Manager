@@ -31,19 +31,23 @@ function resolveCurrentUserName(string $remoteUser, array $uidToNameMapping): st
  */
 function getUserOwedAmount(PDO $pdo, string $userName): float
 {
+    // Updated SQL to work with the normalized schema
     $sql = "
-        SELECT SUM(fldCost) AS owed  -- Sum of individual costs for bills.
-        FROM tblUtilities
-        WHERE fldStatus <> 'Paid'    -- Only consider bills not fully paid.
-          AND FIND_IN_SET(?, REPLACE(fldOwe, ' ', '')) -- Check if user is in the 'fldOwe' list (comma-separated, spaces removed).
+        SELECT SUM(u.fldCost) AS owed
+        FROM tblUtilities u
+        JOIN tblBillOwes bo ON u.pmkBillID = bo.billID
+        JOIN tblPeople p ON bo.personID = p.personID
+        WHERE p.personName = :userName
+          AND u.fldStatus <> 'Paid'
     ";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$userName]); // Parameterized query to prevent SQL injection.
-    return (float)($stmt->fetch()['owed'] ?? 0); // Return sum or 0 if no bills owed.
+    $stmt->execute([':userName' => $userName]);
+    return (float)($stmt->fetch(PDO::FETCH_ASSOC)['owed'] ?? 0);
 }
 
 /**
  * Fetches a subset of utility bills for a specific page, ordered by date.
+ * (pmkBillID added, fldOwe removed)
  *
  * @param PDO $pdo The PDO database connection object.
  * @param int $limit The maximum number of bills to fetch for the page.
@@ -53,13 +57,12 @@ function getUserOwedAmount(PDO $pdo, string $userName): float
 function getBillsForPage(PDO $pdo, int $limit, int $offset): array
 {
     $sql = '
-        SELECT fldDate, fldItem, fldTotal, fldCost, fldDue, fldStatus, fldView, fldOwe
+        SELECT pmkBillID, fldDate, fldItem, fldTotal, fldCost, fldDue, fldStatus, fldView
         FROM tblUtilities
-        ORDER BY fldDate DESC -- Show most recent bills first.
-        LIMIT :limit OFFSET :offset -- For pagination.
+        ORDER BY fldDate DESC
+        LIMIT :limit OFFSET :offset
     ';
     $stmt = $pdo->prepare($sql);
-    // Bind parameters for LIMIT and OFFSET to ensure type safety and prevent SQL injection.
     $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
     $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
@@ -123,14 +126,29 @@ if (json_last_error() !== JSON_ERROR_NONE) { // Check for errors during JSON dec
 }
 
 // Determine the current user's application-specific name.
-$currentRemoteUser = $_SERVER['REMOTE_USER'] ?? ''; // Get system username.
-$userName = resolveCurrentUserName($currentRemoteUser, $uidToNameMapping); // Map to application name.
+$currentRemoteUser = $_SERVER['REMOTE_USER'] ?? '';
+$userName = resolveCurrentUserName($currentRemoteUser, $uidToNameMapping);
 
 // Calculate the total amount this user owes for unpaid bills.
 $userOwedAmount = getUserOwedAmount($pdo, $userName);
 
+// Fetch IDs of bills the current user owes for (and are not globally 'Paid')
+// This is done once to avoid N+1 queries in the loop.
+$userOwedBillIDs = [];
+if (!empty($userName)) {
+    $userOwesStmt = $pdo->prepare("
+        SELECT bo.billID
+        FROM tblBillOwes bo
+        JOIN tblPeople p ON bo.personID = p.personID
+        JOIN tblUtilities u ON bo.billID = u.pmkBillID
+        WHERE p.personName = :userName AND u.fldStatus <> 'Paid'
+    ");
+    $userOwesStmt->execute([':userName' => $userName]);
+    $userOwedBillIDs = $userOwesStmt->fetchAll(PDO::FETCH_COLUMN);
+}
+
 // --- Pagination Setup ---
-$billsPerPage = (int)($_ENV['APP_BILLS_PER_PAGE'] ?? 10); // Number of bills per page from .env, default to 10.
+$billsPerPage = (int)($_ENV['APP_BILLS_PER_PAGE'] ?? 10);
 $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1; // Get current page from URL query param.
 if ($currentPage < 1) { // Ensure current page is not less than 1.
     $currentPage = 1;
@@ -180,8 +198,11 @@ $billsByYear = groupBillsByYear($billsForCurrentPage);
                     </thead>
                     <tbody>
                         <?php foreach ($yearCells as $cell):
-                            $owedList = array_map('trim', explode(',', $cell['fldOwe']));
-                            $isOwed = in_array($userName, $owedList);
+                            // Determine if the current user owes for this specific bill
+                            $isOwedByCurrentUser = false;
+                            if ($cell['fldStatus'] !== 'Paid') {
+                                $isOwedByCurrentUser = in_array($cell['pmkBillID'], $userOwedBillIDs);
+                            }
                             ?>
                             <tr>
                                 <td><?= htmlspecialchars($cell['fldDate']) ?></td>
@@ -190,10 +211,10 @@ $billsByYear = groupBillsByYear($billsForCurrentPage);
                                 <td class="col-cost">$<?= htmlspecialchars(number_format((float)$cell['fldCost'], 2)) ?></td>
                                 <td><?= htmlspecialchars($cell['fldDue']) ?></td>
                                 <td>
-                                    <?php if ($isOwed && $cell['fldStatus'] !== 'Paid'): // Check actual status too ?>
-                                        <span class="badge badge-unpaid">Unpaid</span>
+                                    <?php if ($isOwedByCurrentUser): ?>
+                                        <span class="badge badge-unpaid">Unpaid by You</span>
                                     <?php else: ?>
-                                        <span class="badge badge-paid">Paid</span>
+                                        <span class="badge badge-paid">Paid by You / Not Owed</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -211,7 +232,7 @@ $billsByYear = groupBillsByYear($billsForCurrentPage);
 
     <?php if ($totalPages > 1): ?>
         <nav class="pagination">
-            Page <?= $currentPage ?> of <?= $totalPages ?>
+            <span class="pagination-summary-text">Page <?= $currentPage ?> of <?= $totalPages ?></span>
             <ul class="pagination-links">
                 <?php if ($currentPage > 1): ?>
                     <li><a href="?page=<?= $currentPage - 1 ?>">Previous</a></li>
