@@ -6,7 +6,7 @@
 session_start(); // Start session for CSRF token access and potential flash messages.
 include './connect-DB.php'; // Includes $pdo, and helper functions like isDryRunActive().
 
-$is_dry_run_active = isDryRunActive(); // Check dry-run status.
+$is_dry_run_active = isDryRunActive(); // Check dry-run status. This re-uses the function from connect-DB.
 $allPeople = []; // Initialize $allPeople
 
 // Fetch all people for determining who could owe.
