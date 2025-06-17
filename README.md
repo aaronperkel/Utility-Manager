@@ -115,9 +115,11 @@ The Python script [src/scripts/db.py](src/scripts/db.py) sends automated email r
 - Automated System: The cron job for db.py automatically sends email reminders for unpaid bills to individuals listed in tblBillOwes, due within a 7-day window.
 
 ## Development Notes
+
 - Security: Several security enhancements like CSRF protection (on most forms) and improved input validation have been implemented. However, ongoing vigilance and adherence to security best practices are crucial. send_custom_email.php has a TODO note for CSRF protection.
 - Error Handling: The application includes improved error display mechanisms. For production environments, consider implementing more robust server-side logging (e.g., using Monolog for PHP, Python's logging module).
 - Database Schema: The database structure has been normalized (introducing tblPeople and tblBillOwes) for better data integrity and flexibility. See [src/sql.php](src/sql.php) for details.
 
 ## License
+
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
