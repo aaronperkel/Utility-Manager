@@ -100,7 +100,13 @@ foreach ($base_data as $row) {
 }
 
 // 3. Calculate Trend Adjustment Percentage (based on last 6 completed months)
+// Define constants/thresholds for trend calculation
+define('MIN_SUM_FOR_TREND_CALC', 1.00);
+define('MAX_POSITIVE_TREND_ADJUSTMENT', 0.75); // +75%
+define('MIN_NEGATIVE_TREND_ADJUSTMENT', -0.50); // -50%
+
 $trend_adjustment_percentages = ['Gas' => 0.0, 'Electric' => 0.0, 'Internet' => 0.0];
+$trend_status = ['Gas' => 'N/A', 'Electric' => 'N/A', 'Internet' => 'N/A']; // To store status of trend calc
 $trend_period_months = 6;
 
 // Current year trend period: last `trend_period_months` completed months
@@ -140,43 +146,78 @@ foreach ($bill_items as $item) {
     $previous_year_sum_result = $stmt_previous_trend->fetch(PDO::FETCH_ASSOC);
     $previous_year_sum = $previous_year_sum_result ? (float)$previous_year_sum_result['period_total'] : 0.0;
 
-    if ($previous_year_sum > 0) {
-        $trend_adjustment_percentages[$item] = ($current_year_sum - $previous_year_sum) / $previous_year_sum;
-    } elseif ($current_year_sum > 0) { // Previous sum is 0 or less, current is positive
-        $trend_adjustment_percentages[$item] = 1.0; // Consider as 100% increase if no baseline
+    if ($previous_year_sum < MIN_SUM_FOR_TREND_CALC) {
+        $trend_adjustment_percentages[$item] = 0.0;
+        $trend_status[$item] = 'no_reliable_trend';
     } else {
-        $trend_adjustment_percentages[$item] = 0.0; // Both are 0 or previous is negative
+        $percentage_change = ($current_year_sum - $previous_year_sum) / $previous_year_sum;
+        if ($percentage_change > MAX_POSITIVE_TREND_ADJUSTMENT) {
+            $trend_adjustment_percentages[$item] = MAX_POSITIVE_TREND_ADJUSTMENT;
+            $trend_status[$item] = 'capped_positive';
+        } elseif ($percentage_change < MIN_NEGATIVE_TREND_ADJUSTMENT) {
+            $trend_adjustment_percentages[$item] = MIN_NEGATIVE_TREND_ADJUSTMENT;
+            $trend_status[$item] = 'capped_negative';
+        } else {
+            $trend_adjustment_percentages[$item] = $percentage_change;
+            $trend_status[$item] = 'calculated';
+        }
     }
 }
 
 // 4. Calculate Final Forecast
+// Re-initialize forecast_totals to ensure clean slate before applying new logic
+$forecast_totals = ['Gas' => 'N/A', 'Electric' => 'N/A', 'Internet' => 'N/A'];
+
 foreach ($bill_items as $item) {
-    if ($base_forecast_values[$item] > 0) { // Only forecast if there's a base value
-      $forecast_totals[$item] = $base_forecast_values[$item] * (1 + $trend_adjustment_percentages[$item]);
-    } else {
-      // If no base data for last year's upcoming month, use simple average of last 6 months as fallback
-        $sql_simple_avg = "
-            SELECT AVG(fldTotal) as average_total
-            FROM tblUtilities
-            WHERE fldItem = :item
-              AND STR_TO_DATE(fldDate, '%Y-%m-%d') >= STR_TO_DATE(:six_months_ago, '%Y-%m-%d')
-        ";
-        // $six_months_ago_date was defined in previous version of code, re-define or ensure it is available.
-        // For simplicity, let's use the $current_trend_start_date (start of last 6 completed months)
-        $stmt_simple_avg = $pdo->prepare($sql_simple_avg);
-        $stmt_simple_avg->execute([':item' => $item, ':six_months_ago' => $current_trend_start_date]);
-        $simple_avg_result = $stmt_simple_avg->fetch(PDO::FETCH_ASSOC);
-        if ($simple_avg_result && $simple_avg_result['average_total'] !== null) {
-            $forecast_totals[$item] = (float)$simple_avg_result['average_total'];
+    // Default to N/A, will be overwritten if calculation is possible
+    $forecast_totals[$item] = 'N/A';
+
+    if ($trend_status[$item] === 'no_reliable_trend') {
+        if ($base_forecast_values[$item] >= MIN_SUM_FOR_TREND_CALC) {
+            $forecast_totals[$item] = $base_forecast_values[$item]; // Use base value without trend
+            // $trend_status[$item] remains 'no_reliable_trend' - will be indicated in display
         } else {
-            $forecast_totals[$item] = 'N/A'; // Still N/A if no data for simple average either
+            // Fallback to simple average if base is also too low
+            $sql_simple_avg_fallback = "
+                SELECT AVG(fldTotal) as average_total
+                FROM tblUtilities
+                WHERE fldItem = :item
+                  AND STR_TO_DATE(fldDate, '%Y-%m-%d') >= STR_TO_DATE(:six_months_ago, '%Y-%m-%d')
+            ";
+            $stmt_simple_avg_fallback = $pdo->prepare($sql_simple_avg_fallback);
+            // Use $current_trend_start_date for the 6-month window
+            $stmt_simple_avg_fallback->execute([':item' => $item, ':six_months_ago' => $current_trend_start_date]);
+            $simple_avg_result_fallback = $stmt_simple_avg_fallback->fetch(PDO::FETCH_ASSOC);
+            if ($simple_avg_result_fallback && $simple_avg_result_fallback['average_total'] !== null) {
+                $forecast_totals[$item] = (float)$simple_avg_result_fallback['average_total'];
+                $trend_status[$item] = 'fallback_avg'; // Update status to reflect fallback
+            }
+            // If still no data, it remains 'N/A' as initialized
         }
-    }
-}
-// Initialize $forecast_totals again before filling to ensure 'N/A' for items with no forecast
-foreach ($bill_items as $item_key) {
-    if (!isset($forecast_totals[$item_key])) {
-        $forecast_totals[$item_key] = 'N/A';
+    } else { // Trend was 'calculated', 'capped_positive', or 'capped_negative'
+        if ($base_forecast_values[$item] >= MIN_SUM_FOR_TREND_CALC) {
+            $forecast_totals[$item] = $base_forecast_values[$item] * (1 + $trend_adjustment_percentages[$item]);
+        } elseif ($base_forecast_values[$item] < MIN_SUM_FOR_TREND_CALC && $base_forecast_values[$item] > 0) {
+            // Base value is small but not zero, proceed with trend but it might be less reliable
+             $forecast_totals[$item] = $base_forecast_values[$item] * (1 + $trend_adjustment_percentages[$item]);
+             // Optionally, change status here if we want to flag this specific case
+        } else { // Base value is zero or effectively zero
+            // Fallback to simple average as base is not usable
+             $sql_simple_avg_fallback_no_base = "
+                SELECT AVG(fldTotal) as average_total
+                FROM tblUtilities
+                WHERE fldItem = :item
+                  AND STR_TO_DATE(fldDate, '%Y-%m-%d') >= STR_TO_DATE(:six_months_ago, '%Y-%m-%d')
+            ";
+            $stmt_simple_avg_fallback_no_base = $pdo->prepare($sql_simple_avg_fallback_no_base);
+            $stmt_simple_avg_fallback_no_base->execute([':item' => $item, ':six_months_ago' => $current_trend_start_date]);
+            $simple_avg_result_fallback_no_base = $stmt_simple_avg_fallback_no_base->fetch(PDO::FETCH_ASSOC);
+            if ($simple_avg_result_fallback_no_base && $simple_avg_result_fallback_no_base['average_total'] !== null) {
+                $forecast_totals[$item] = (float)$simple_avg_result_fallback_no_base['average_total'];
+                $trend_status[$item] = 'fallback_avg_no_base'; // Update status
+            }
+            // If still no data, it remains 'N/A'
+        }
     }
 }
 
@@ -206,18 +247,44 @@ foreach ($bill_items as $item_key) {
             <p>
                 Forecast based on bills from <?= htmlspecialchars($forecast_base_period_display) ?>,
                 adjusted by year-over-year trends from the last <?= $trend_period_months ?> months.
-                If base data from <?= htmlspecialchars($forecast_base_period_display) ?> is unavailable, a simple average of the last 6 months is used.
+                Trend adjustments are capped at <?= MAX_POSITIVE_TREND_ADJUSTMENT*100 ?>% increase or <?= abs(MIN_NEGATIVE_TREND_ADJUSTMENT*100) ?>% decrease.
+                If historical data is insufficient for a reliable trend or base, a simple average of the last 6 months is used.
             </p>
             <ul>
                 <?php foreach ($forecast_totals as $item => $total): ?>
                     <li>
                         <?= htmlspecialchars($item) ?>:
                         <?= is_numeric($total) ? '$' . number_format($total, 2) : htmlspecialchars($total) ?>
-                        <?php if (is_numeric($total) && $base_forecast_values[$item] > 0 && $trend_adjustment_percentages[$item] != 0): ?>
-                            (Trend: <?= sprintf('%+.1f%%', $trend_adjustment_percentages[$item] * 100) ?>)
-                        <?php elseif (is_numeric($total) && $base_forecast_values[$item] == 0 && $total > 0) : ?>
-                            (Recent Avg.)
-                        <?php endif; ?>
+                        <?php
+                        $status_text = '';
+                        if (is_numeric($total)) {
+                            switch ($trend_status[$item]) {
+                                case 'calculated':
+                                    $status_text = sprintf('(Trend: %+.1f%%)', $trend_adjustment_percentages[$item] * 100);
+                                    break;
+                                case 'capped_positive':
+                                    $status_text = sprintf('(Trend: %+.1f%% Cap)', MAX_POSITIVE_TREND_ADJUSTMENT * 100);
+                                    break;
+                                case 'capped_negative':
+                                    $status_text = sprintf('(Trend: %+.1f%% Cap)', MIN_NEGATIVE_TREND_ADJUSTMENT * 100);
+                                    break;
+                                case 'no_reliable_trend':
+                                    // Check if base_forecast_value was used directly
+                                    if ($base_forecast_values[$item] >= MIN_SUM_FOR_TREND_CALC && $forecast_totals[$item] == $base_forecast_values[$item]) {
+                                       $status_text = '(Base Used - Trend N/A)';
+                                    } else {
+                                       // This case should ideally be handled by fallback_avg if base was also too low
+                                       $status_text = '(Trend N/A)';
+                                    }
+                                    break;
+                                case 'fallback_avg':
+                                case 'fallback_avg_no_base':
+                                    $status_text = '(Recent Avg.)';
+                                    break;
+                            }
+                        }
+                        echo ' ' . htmlspecialchars($status_text);
+                        ?>
                     </li>
                 <?php endforeach; ?>
             </ul>
