@@ -214,7 +214,7 @@ $billsByYear = groupBillsByYear($billsForCurrentPage);
                                     <?php if ($isOwedByCurrentUser): ?>
                                         <span class="badge badge-unpaid">Unpaid by You</span>
                                     <?php else: ?>
-                                        <span class="badge badge-paid">Paid by You</span>
+                                        <span class="badge badge-paid">Paid by You / Not Owed</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>

@@ -37,7 +37,8 @@ include 'connect-DB.php';
     <script src="js/dropdown.js"></script>
 
 </head>
-
-<body class="<?php echo $pathParts['filename']; ?>">
-    <!-- #################   Body element    ################# -->
-    <?php include 'nav.php'; ?>
+<?php
+print '<body class="' . $pathParts['filename'] . '">';
+print '<!-- #################   Body element    ################# -->';
+include 'nav.php';
+?>
