@@ -6,6 +6,8 @@
     --primary: #667EEA;
     --paid: #48BB78;
     --unpaid: #F56565;
+    --success-color: var(--paid); /* Using existing --paid variable */
+    --error-color: var(--unpaid); /* Using existing --unpaid variable */
 }
 
 * {
@@ -36,6 +38,60 @@ body {
     font-size: 1.1rem;
     margin-bottom: 2em;
 }
+
+/* General Message Box Styling */
+.messages {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 0.3em;
+    font-size: 0.95rem;
+}
+
+.messages ul {
+    list-style-position: inside;
+    padding-left: 0.5em; /* Indent list items slightly */
+}
+
+.messages strong { /* Style for the heading within messages */
+    display: block;
+    margin-bottom: 0.5em;
+    font-weight: 600;
+}
+
+/* Success Messages */
+.messages.success-messages {
+    background-color: #2F4C39; /* Darker green background for success */
+    color: #C6F6D5; /* Light green text for success */
+    border-left: 5px solid var(--success-color);
+}
+
+.messages.success-messages strong {
+    color: #9AE6B4; /* Slightly lighter green for the heading */
+}
+
+.messages.success-messages::before {
+    content: "✔ "; /* Checkmark icon */
+    font-weight: bold;
+    margin-right: 0.5em;
+}
+
+/* Error Messages */
+.messages.error-messages {
+    background-color: #4C3030; /* Darker red background for errors */
+    color: #FED7D7; /* Light red text for errors */
+    border-left: 5px solid var(--error-color);
+}
+
+.messages.error-messages strong {
+    color: #FEB2B2; /* Slightly lighter red for the heading */
+}
+
+.messages.error-messages::before {
+    content: "✖ "; /* X mark icon */
+    font-weight: bold;
+    margin-right: 0.5em;
+}
+
 
 /* Section titles */
 .section-title {
@@ -88,6 +144,14 @@ th {
     border-bottom: 1px solid var(--bg-page);
     font-size: 0.95rem;
     color: var(--text-main);
+}
+
+/* Ensure Date Billed (1st column) and Due Date (5th column) do not wrap */
+table tbody td:nth-child(1),
+table thead th:nth-child(1),
+table tbody td:nth-child(5),
+table thead th:nth-child(5) {
+    white-space: nowrap;
 }
 
 /* Status badges as buttons */
@@ -227,15 +291,28 @@ th.payment {
 }
 
 /* ================ Admin “Add New Bill” Form Enhancements ================ */
-.admin-area .form-panel {
-    display: grid;
-    grid-template-columns: auto;
-    grid-auto-rows: auto;
-    gap: 1.5rem 2rem;
+.admin-area .form-panel form { /* Target the form directly */
+    display: flex;
+    flex-direction: column; /* Stack form rows vertically */
+    gap: 1rem; /* Space between form rows */
     background: var(--bg-panel);
     padding: 2rem;
     border-radius: 0.5em;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.admin-area .form-panel .form-row {
+    display: flex;
+    flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+    gap: 1rem; /* Space between form groups within a row */
+}
+
+.admin-area .form-panel .form-group {
+    flex: 1 1 0; /* Allow groups to grow and shrink, with a base of 0 */
+    min-width: 200px; /* Minimum width before wrapping */
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem; /* Space between label and input */
 }
 
 .admin-area .form-panel label {
@@ -243,7 +320,7 @@ th.payment {
     font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-main);
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.1rem; /* Reduced margin */
 }
 
 .admin-area .form-panel input,
@@ -257,7 +334,7 @@ th.payment {
     background: #1E293B;
     color: var(--text-main);
     transition: border-color 0.2s;
-    margin: 0.25em 0 0.5em 0;
+    /* margin: 0.25em 0 0.5em 0; Removed to use gap in form-group */
 }
 
 .admin-area .form-panel input:focus,
@@ -266,24 +343,30 @@ th.payment {
     border-color: var(--primary);
 }
 
-.admin-area .form-panel div {
-    grid-column: span 2;
-    display: flex;
-    gap: 1em;
-    align-items: center;
-}
-
-.admin-area .form-panel button[type="submit"] {
-    grid-column: 1 / -1;
+/* Specific styling for the submit button container if needed, or style button directly */
+.admin-area .form-panel .form-row .form-group button[type="submit"] {
     background: var(--primary);
     color: #fff;
     font-size: 1.05rem;
     padding: 0.9em;
     cursor: pointer;
+    border: none; /* Ensure no border conflicts */
 }
 
-.admin-area .form-panel button[type="submit"]:hover {
+.admin-area .form-panel .form-row .form-group button[type="submit"]:hover {
     opacity: 0.9;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .admin-area .form-panel .form-row {
+        flex-direction: column; /* Stack groups vertically on smaller screens */
+        gap: 1rem; /* Adjust gap for stacked layout if needed */
+    }
+
+    .admin-area .form-panel .form-group {
+        min-width: 100%; /* Each group takes full width */
+    }
 }
 
 /* ================ “Send Custom Email” Page Enhancements ================ */
@@ -446,4 +529,50 @@ nav.pagination .pagination-links a.active {
 .dry-run-info ul {
     list-style-position: inside;
     padding-left: 0.5em;
+}
+
+/* ================ Trends Page Insights Section ================ */
+.insights-section {
+    display: flex;
+    flex-wrap: wrap; /* Allow cards to wrap on smaller screens */
+    gap: 1.5rem; /* Space between cards */
+    margin-top: 2rem; /* Space above the insights section */
+    padding: 1rem;
+    background-color: var(--bg-page); /* Or var(--bg-panel) if preferred */
+    border-radius: 0.5em;
+}
+
+.insight-card {
+    flex: 1 1 300px; /* Grow, shrink, with a base width of 300px */
+    background-color: var(--bg-panel);
+    padding: 1.5rem;
+    border-radius: 0.5em;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.insight-card h3 {
+    font-size: 1.2rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.insight-card p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 0.75rem;
+}
+
+.insight-card ul {
+    list-style-type: none; /* Remove default bullets */
+    padding-left: 0;
+}
+
+.insight-card li {
+    font-size: 0.95rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid var(--bg-header); /* Subtle separator for list items */
+}
+
+.insight-card li:last-child {
+    border-bottom: none;
 }
