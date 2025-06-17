@@ -642,29 +642,49 @@ $csrfTokenListForms = $_SESSION['csrf_token_list_forms'];
             $csrfTokenMainForm = $_SESSION['csrf_token_main_form'];
             ?>
             <input type="hidden" name="csrf_token" value="<?= $csrfTokenMainForm ?>">
-            <label for="date">Date</label>
-            <input type="date" id="date" name="date" required>
 
-            <label for="item">Item</label>
-            <select id="item" name="item" required>
-                <option>Gas</option>
-                <option>Electric</option>
-                <option>Internet</option>
-            </select>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" id="date" name="date" required>
+                </div>
+                <div class="form-group">
+                    <label for="due">Due Date</label>
+                    <input type="date" id="due" name="due" required>
+                </div>
+            </div>
 
-            <label for="total">Total</label>
-            <input type="number" id="total" name="total" oninput="updateField()" step="0.01" required>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="item">Item</label>
+                    <select id="item" name="item" required>
+                        <option>Gas</option>
+                        <option>Electric</option>
+                        <option>Internet</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="total">Total</label>
+                    <input type="number" id="total" name="total" oninput="updateField()" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="cost">Per Person</label>
+                    <input type="number" id="cost" name="cost" readonly step="0.01">
+                </div>
+            </div>
 
-            <label for="cost">Per Person</label>
-            <input type="number" id="cost" name="cost" readonly step="0.01">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="view">PDF Upload</label>
+                    <input type="file" id="view" name="view" accept="application/pdf" required>
+                </div>
+            </div>
 
-            <label for="due">Due Date</label>
-            <input type="date" id="due" name="due" required>
-
-            <label for="view">PDF Upload</label>
-            <input type="file" id="view" name="view" accept="application/pdf" required>
-
-            <button type="submit">Submit New Bill</button>
+            <div class="form-row">
+                <div class="form-group">
+                    <button type="submit">Submit New Bill</button>
+                </div>
+            </div>
         </form>
     </div>
 </main>
