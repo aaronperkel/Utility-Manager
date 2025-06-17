@@ -70,9 +70,9 @@ body {
 }
 
 .messages.success-messages::before {
-    content: "✔ "; /* Checkmark icon */
-    font-weight: bold;
-    margin-right: 0.5em;
+    /* content: "✔ "; */ /* Checkmark icon - Removed */
+    /* font-weight: bold; */ /* Removed */
+    /* margin-right: 0.5em; */ /* Removed */
 }
 
 /* Error Messages */
@@ -152,6 +152,13 @@ table thead th:nth-child(1),
 table tbody td:nth-child(5),
 table thead th:nth-child(5) {
     white-space: nowrap;
+}
+
+/* Actions Column (last child) styling */
+table tbody td:last-child,
+table thead th:last-child {
+    white-space: nowrap;
+    min-width: 120px; /* Provide some base width */
 }
 
 /* Status badges as buttons */
@@ -250,7 +257,7 @@ nav a:hover,
 .payment-cell form {
     display: flex;
     align-items: center;
-    gap: 0.5em;
+    gap: 1em; /* Increased gap */
     margin: 0;
 }
 
