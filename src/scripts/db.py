@@ -314,56 +314,73 @@ if __name__ == '__main__':
     print(f"Script started at: {script_start_time.strftime('%Y-%m-%d %H:%M:%S')}")
     
     # Fetch all unpaid bills from the database.
+    # Each item in unpaid_bills_data is a dictionary with all necessary details.
     unpaid_bills_data = db_manager.get_unpaid_bills()
 
     if unpaid_bills_data: # Proceed if there are any unpaid bills.
         print('-------------- Email Scheduling --------------')
-        print(f'Found {len(unpaid_bills_data)} unpaid bill entries.')
+        print(f'Found {len(unpaid_bills_data)} unpaid bill instances (bill per person).')
 
         email_sent_count = 0    # Counter for successfully sent emails.
         email_failed_count = 0  # Counter for failed email attempts.
 
-        # Iterate through each unpaid bill entry.
-        # bill_due_date_obj is a datetime.date object.
-        # owes_str is a comma-separated string of names.
-        for bill_due_date_obj, owes_str in unpaid_bills_data:
-            # Split the 'owes_str' into a list of names, stripping whitespace and filtering out empty names.
-            persons_owing = [p.strip() for p in owes_str.split(',') if p.strip()]
+        for bill_info in unpaid_bills_data:
+            # Extract data from the bill_info dictionary
+            due_date_obj = bill_info['due_date']  # This is already a datetime.date object
+            person_name_str = bill_info['person_name']
+            item_str = bill_info['item']
+            # Ensure these are floats for calculations and formatting
+            total_amount_val = float(bill_info['total_bill_amount'])
+            cost_per_person_val = float(bill_info['cost_per_person'])
+            # bill_id = bill_info['bill_id'] # Available if needed for more detailed logging
 
-            for person_name_str in persons_owing: # Iterate through each person owing for the current bill.
-                print(f'- Processing: Due {bill_due_date_obj.strftime(DATE_FORMAT_STR)}, For: {person_name_str}')
+            print(f'- Processing: Item=\'{item_str}\', Due={due_date_obj.strftime(DATE_FORMAT_STR)}, For Person=\'{person_name_str}\'')
 
-                # Fetch specific bill details (total amount, per-person cost) for this person and bill.
-                bill_details_tuple = db_manager.get_bill_details_for_reminder(bill_due_date_obj, person_name_str)
+            recipient_email_str = EMAIL_MAP.get(person_name_str)
+            if not recipient_email_str:
+                print(f"  - [WARN] No email found for {person_name_str} in APP_USER_EMAILS. Skipping reminder for item '{item_str}'.")
+                email_failed_count += 1
+                continue
 
-                if not bill_details_tuple: # If no details found (e.g., data inconsistency).
-                    print(f"  - [WARN] No specific bill details found for {person_name_str} on {bill_due_date_obj.strftime(DATE_FORMAT_STR)}. Skipping reminder.")
-                    continue # Skip to the next person or bill.
+            try:
+                days_until_due = (due_date_obj - datetime.date.today()).days
+                print(f'  - Days until bill due: {days_until_due}')
 
-                bill_total_amount, cost_per_person_amount = bill_details_tuple
+                if days_until_due <= 7: # Reminder threshold (e.g., 7 days)
+                    print('  - Attempting to prepare and send email...')
 
-                try:
-                    today_date_obj = datetime.date.today() # Get current date.
-                    days_until_due = (bill_due_date_obj - today_date_obj).days # Calculate days until due.
-                    print(f'  - Days until bill due: {days_until_due}')
+                    subject_str = f"URGENT: Reminder - {item_str} Bill Due Soon" if days_until_due <= 3 else f"Reminder: {item_str} Bill Due"
 
-                    # Send reminder if the bill is due within 7 days (or is past due).
-                    if days_until_due <= 7:
-                        print('  - Attempting to send email...')
-                        if send_email(bill_due_date_obj, person_name_str, bill_total_amount, cost_per_person_amount):
-                            email_sent_count += 1 # Increment success counter.
-                        else:
-                            email_failed_count += 1 # Increment failure counter.
-                        time.sleep(1) # Brief pause to rate-limit email sending.
+                    email_body_html = get_email_body(
+                        due_date_str=due_date_obj.strftime(DATE_FORMAT_STR), # Pass formatted date string for email body
+                        item_str=item_str,
+                        total=total_amount_val,
+                        cost=cost_per_person_val,
+                        app_base_url=APP_BASE_URL,
+                        from_name=APP_EMAIL_FROM_NAME,
+                        from_contact_email=PYTHON_SENDER_EMAIL
+                    )
+
+                    if send_email(
+                        recipient_email=recipient_email_str,
+                        subject=subject_str,
+                        body_html=email_body_html
+                    ):
+                        # Success/Dry-run message is printed by send_email()
+                        email_sent_count += 1
                     else:
-                        print('  - Not sending email (due date is more than 7 days away).')
-                except ValueError as ve: # Catch errors related to date processing.
-                    print(f"  - [ERROR] Date processing error for {person_name_str}, bill due {bill_due_date_obj.strftime(DATE_FORMAT_STR)}: {ve}")
-                    email_failed_count += 1
-                except Exception as e: # Catch any other unexpected errors for this specific bill/person.
-                    print(f"  - [ERROR] Unexpected error processing for {person_name_str}, bill due {bill_due_date_obj.strftime(DATE_FORMAT_STR)}: {e}")
-                    email_failed_count += 1
-        
+                        # Failure message is printed by send_email()
+                        email_failed_count += 1
+                    time.sleep(1) # Respect rate limits
+                else:
+                    print(f"    - Reminder not yet due for {person_name_str} (Item: {item_str}).")
+            except ValueError as ve:
+                print(f"  - [ERROR] Date processing error for {person_name_str}, bill item '{item_str}' due {due_date_obj.strftime(DATE_FORMAT_STR)}: {ve}")
+                email_failed_count += 1
+            except Exception as e:
+                print(f"  - [ERROR] Unexpected error processing for {person_name_str}, bill item '{item_str}' due {due_date_obj.strftime(DATE_FORMAT_STR)}: {e}")
+                email_failed_count += 1
+
         # Print a summary of email sending activity.
         print('-------------- Summary --------------')
         print(f"Total reminder emails attempted: {email_sent_count + email_failed_count}")

@@ -1,6 +1,6 @@
 <footer class="site-footer">
     <div class="footer-container">
-        <p>81 Buell Utilities. Updated June 2025. Version 3.1</p>
+        <p>81 Buell Utilities. Updated April 2025. Version 3.0</p>
         <p>
             <!-- Note: Contact phone and email are hardcoded here.
                  For a more configurable system, these could be moved to .env variables. -->
