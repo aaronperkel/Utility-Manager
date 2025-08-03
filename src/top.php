@@ -20,12 +20,18 @@ include 'connect-DB.php';
 <head>
     <meta charset="utf-8">
     <title>81 Buell Utilites</title>
-    <link rel="icon" type="image/x" href="./public/favicon.ico">
     <meta name="author" content="Aaron Perkel">
     <meta name="description" content="A dashboard to keep
         track of the monthly utilities of our apartment">
     <meta name="viewport" content="width=device-width,
         initial-scale=1.0">
+
+    <link rel="icon" type="image/png" href="/public/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/public/favicon.svg" />
+    <link rel="shortcut icon" href="/public/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="81 Buell" />
+    <link rel="manifest" href="/public/site.webmanifest" />
 
     <link href="css/custom.css?version=<?php print time(); ?>" rel="stylesheet" type="text/css">
 
