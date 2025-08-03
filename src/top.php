@@ -26,12 +26,15 @@ include 'connect-DB.php';
     <meta name="viewport" content="width=device-width,
         initial-scale=1.0">
 
-    <link rel="icon" type="image/png" href="/public/favicon-96x96.png" sizes="96x96" />
+    <link rel="apple-touch-icon" href="/public/apple-touch-icon.png" />
     <link rel="icon" type="image/svg+xml" href="/public/favicon.svg" />
-    <link rel="shortcut icon" href="/public/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-title" content="81 Buell" />
+    <link rel="icon" type="image/png" href="/public/favicon-96x96.png" />
+    <link rel="mask-icon" href="/public/favicon.svg" color="#000000" />
     <link rel="manifest" href="/public/site.webmanifest" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="apple-mobile-web-app-title" content="81 Buell" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
     <link href="css/custom.css?version=<?php print time(); ?>" rel="stylesheet" type="text/css">
 
