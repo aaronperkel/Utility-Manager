@@ -3,19 +3,30 @@ $sql = 'SELECT fldDue, fldStatus, fldItem FROM tblUtilities';
 $stmt = $pdo->query($sql);
 
 $EOL = "\r\n";
+$dtstamp = gmdate('Ymd\THis\Z');
 $ics = "BEGIN:VCALENDAR{$EOL}VERSION:2.0{$EOL}PRODID:-//81 Buell Utilities//EN{$EOL}";
+$ics .= "BEGIN:VEVENT{$EOL}UID:RentDueRecurring@81buell{$EOL}DTSTAMP:{$dtstamp}{$EOL}";
+$ics .= "DTSTART;VALUE=DATE:20240701{$EOL}RRULE:FREQ=MONTHLY;UNTIL=20260501;BYMONTHDAY=1{$EOL}";
+$ics .= "SUMMARY:🏠 Rent Due{$EOL}END:VEVENT{$EOL}";
+
+$emojiMap = [
+    'Electric' => '💡',
+    'Gas' => '🔥',
+    'Internet' => '🌐',
+];
 
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     $due = DateTime::createFromFormat('Y-m-d', $row['fldDue'])->format('Ymd');
     $paidFlag = strtolower($row['fldStatus']) === 'paid' ? ' - PAID' : '';
     $dtstamp = gmdate('Ymd\THis\Z');
+	$emoji = $emojiMap[$row['fldItem']] ?? '';
 
     $ics .= "BEGIN:VEVENT{$EOL}";
     $ics .= "UID:{$row['fldItem']}-{$due}@81buell{$EOL}";
     $ics .= "DTSTAMP:{$dtstamp}{$EOL}";
     $ics .= "DTSTART;VALUE=DATE:{$due}{$EOL}";
     $ics .= "DTEND;VALUE=DATE:{$due}{$EOL}";
-    $ics .= "SUMMARY:{$row['fldItem']} Bill Due{$paidFlag}{$EOL}";
+    $ics .= "SUMMARY:{$emoji} {$row['fldItem']} Bill Due{$paidFlag}{$EOL}";
     $ics .= "END:VEVENT{$EOL}";
 }
 
