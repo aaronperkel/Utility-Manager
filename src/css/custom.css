@@ -6,8 +6,10 @@
     --primary: #667EEA;
     --paid: #48BB78;
     --unpaid: #F56565;
-    --success-color: var(--paid); /* Using existing --paid variable */
-    --error-color: var(--unpaid); /* Using existing --unpaid variable */
+    --success-color: var(--paid);
+    /* Using existing --paid variable */
+    --error-color: var(--unpaid);
+    /* Using existing --unpaid variable */
 }
 
 * {
@@ -49,10 +51,12 @@ body {
 
 .messages ul {
     list-style-position: inside;
-    padding-left: 0.5em; /* Indent list items slightly */
+    padding-left: 0.5em;
+    /* Indent list items slightly */
 }
 
-.messages strong { /* Style for the heading within messages */
+.messages strong {
+    /* Style for the heading within messages */
     display: block;
     margin-bottom: 0.5em;
     font-weight: 600;
@@ -60,34 +64,44 @@ body {
 
 /* Success Messages */
 .messages.success-messages {
-    background-color: #2F4C39; /* Darker green background for success */
-    color: #C6F6D5; /* Light green text for success */
+    background-color: #2F4C39;
+    /* Darker green background for success */
+    color: #C6F6D5;
+    /* Light green text for success */
     border-left: 5px solid var(--success-color);
 }
 
 .messages.success-messages strong {
-    color: #9AE6B4; /* Slightly lighter green for the heading */
+    color: #9AE6B4;
+    /* Slightly lighter green for the heading */
 }
 
 .messages.success-messages::before {
-    /* content: "✔ "; */ /* Checkmark icon - Removed */
-    /* font-weight: bold; */ /* Removed */
-    /* margin-right: 0.5em; */ /* Removed */
+    /* content: "✔ "; */
+    /* Checkmark icon - Removed */
+    /* font-weight: bold; */
+    /* Removed */
+    /* margin-right: 0.5em; */
+    /* Removed */
 }
 
 /* Error Messages */
 .messages.error-messages {
-    background-color: #4C3030; /* Darker red background for errors */
-    color: #FED7D7; /* Light red text for errors */
+    background-color: #4C3030;
+    /* Darker red background for errors */
+    color: #FED7D7;
+    /* Light red text for errors */
     border-left: 5px solid var(--error-color);
 }
 
 .messages.error-messages strong {
-    color: #FEB2B2; /* Slightly lighter red for the heading */
+    color: #FEB2B2;
+    /* Slightly lighter red for the heading */
 }
 
 .messages.error-messages::before {
-    content: "✖ "; /* X mark icon */
+    content: "✖ ";
+    /* X mark icon */
     font-weight: bold;
     margin-right: 0.5em;
 }
@@ -158,7 +172,8 @@ table thead th:nth-child(5) {
 table tbody td:last-child,
 table thead th:last-child {
     white-space: nowrap;
-    min-width: 120px; /* Provide some base width */
+    min-width: 120px;
+    /* Provide some base width */
 }
 
 /* Status badges as buttons */
@@ -257,7 +272,8 @@ nav a:hover,
 .payment-cell form {
     display: flex;
     align-items: center;
-    gap: 1em; /* Increased gap */
+    gap: 1em;
+    /* Increased gap */
     margin: 0;
 }
 
@@ -298,10 +314,13 @@ th.payment {
 }
 
 /* ================ Admin “Add New Bill” Form Enhancements ================ */
-.admin-area .form-panel form { /* Target the form directly */
+.admin-area .form-panel form {
+    /* Target the form directly */
     display: flex;
-    flex-direction: column; /* Stack form rows vertically */
-    gap: 1rem; /* Space between form rows */
+    flex-direction: column;
+    /* Stack form rows vertically */
+    gap: 1rem;
+    /* Space between form rows */
     background: var(--bg-panel);
     padding: 2rem;
     border-radius: 0.5em;
@@ -310,16 +329,21 @@ th.payment {
 
 .admin-area .form-panel .form-row {
     display: flex;
-    flex-wrap: wrap; /* Allow items to wrap on smaller screens */
-    gap: 1rem; /* Space between form groups within a row */
+    flex-wrap: wrap;
+    /* Allow items to wrap on smaller screens */
+    gap: 1rem;
+    /* Space between form groups within a row */
 }
 
 .admin-area .form-panel .form-group {
-    flex: 1 1 0; /* Allow groups to grow and shrink, with a base of 0 */
-    min-width: 200px; /* Minimum width before wrapping */
+    flex: 1 1 0;
+    /* Allow groups to grow and shrink, with a base of 0 */
+    min-width: 200px;
+    /* Minimum width before wrapping */
     display: flex;
     flex-direction: column;
-    gap: 0.25rem; /* Space between label and input */
+    gap: 0.25rem;
+    /* Space between label and input */
 }
 
 .admin-area .form-panel label {
@@ -327,7 +351,8 @@ th.payment {
     font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-main);
-    margin-bottom: 0.1rem; /* Reduced margin */
+    margin-bottom: 0.1rem;
+    /* Reduced margin */
 }
 
 .admin-area .form-panel input,
@@ -357,7 +382,8 @@ th.payment {
     font-size: 1.05rem;
     padding: 0.9em;
     cursor: pointer;
-    border: none; /* Ensure no border conflicts */
+    border: none;
+    /* Ensure no border conflicts */
 }
 
 .admin-area .form-panel .form-row .form-group button[type="submit"]:hover {
@@ -367,12 +393,15 @@ th.payment {
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .admin-area .form-panel .form-row {
-        flex-direction: column; /* Stack groups vertically on smaller screens */
-        gap: 1rem; /* Adjust gap for stacked layout if needed */
+        flex-direction: column;
+        /* Stack groups vertically on smaller screens */
+        gap: 1rem;
+        /* Adjust gap for stacked layout if needed */
     }
 
     .admin-area .form-panel .form-group {
-        min-width: 100%; /* Each group takes full width */
+        min-width: 100%;
+        /* Each group takes full width */
     }
 }
 
@@ -451,9 +480,12 @@ th.payment {
 
 /* ================ Pagination Styles ================ */
 nav.pagination {
-    display: flex; /* Use flexbox for alignment */
-    justify-content: center; /* Center items horizontally */
-    align-items: center; /* Align items vertically */
+    display: flex;
+    /* Use flexbox for alignment */
+    justify-content: center;
+    /* Center items horizontally */
+    align-items: center;
+    /* Align items vertically */
     background-color: transparent;
     box-shadow: none;
     margin-top: 2em;
@@ -461,7 +493,8 @@ nav.pagination {
     color: var(--text-main);
     font-size: 0.9rem;
     padding: 0.5em;
-    gap: 15px; /* Adds space between summary text and links list */
+    gap: 15px;
+    /* Adds space between summary text and links list */
 }
 
 span.pagination-summary-text {
@@ -473,19 +506,23 @@ span.pagination-summary-text {
 nav.pagination .pagination-links {
     list-style: none;
     padding: 0;
-    margin: 0; /* Reset margin as flex gap will handle spacing */
+    margin: 0;
+    /* Reset margin as flex gap will handle spacing */
     /* display: inline-block; /* Not needed with flex parent */
 }
 
 nav.pagination .pagination-links li {
-    display: inline; /* Display page links in a line */
-    margin: 0 3px; /* Spacing between page links/buttons */
+    display: inline;
+    /* Display page links in a line */
+    margin: 0 3px;
+    /* Spacing between page links/buttons */
 }
 
 nav.pagination .pagination-links a {
     display: inline-block;
     padding: 8px 12px;
-    border: 1px solid var(--bg-header); /* Subtle border */
+    border: 1px solid var(--bg-header);
+    /* Subtle border */
     color: var(--text-main);
     text-decoration: none;
     border-radius: 4px;
@@ -493,7 +530,8 @@ nav.pagination .pagination-links a {
 }
 
 nav.pagination .pagination-links a:hover {
-    background-color: var(--bg-header); /* Darken on hover */
+    background-color: var(--bg-header);
+    /* Darken on hover */
     color: var(--primary);
     border-color: var(--primary);
 }
@@ -503,25 +541,32 @@ nav.pagination .pagination-links a.active {
     color: white;
     border-color: var(--primary);
     font-weight: bold;
-    cursor: default; /* Indicate it's the current page */
+    cursor: default;
+    /* Indicate it's the current page */
 }
 
 /* ================ Dry Run Mode Styles ================ */
 .dry-run-banner {
-    background-color: #5F3A0E; /* Dark orange/brown background */
-    color: #FEEBC8; /* Light orange/yellow text */
+    background-color: #5F3A0E;
+    /* Dark orange/brown background */
+    color: #FEEBC8;
+    /* Light orange/yellow text */
     padding: 1em;
     margin-bottom: 1.5em;
-    border: 1px solid #DD6B20; /* Orange border */
+    border: 1px solid #DD6B20;
+    /* Orange border */
     border-radius: 0.3em;
     text-align: center;
     font-weight: bold;
 }
 
 .dry-run-info {
-    background-color: #2D3748; /* Same as bg-panel for consistency */
-    color: #A0AEC0; /* Lighter gray text */
-    border: 1px dashed #4A5568; /* Dashed border to indicate informational/non-permanent */
+    background-color: #2D3748;
+    /* Same as bg-panel for consistency */
+    color: #A0AEC0;
+    /* Lighter gray text */
+    border: 1px dashed #4A5568;
+    /* Dashed border to indicate informational/non-permanent */
     padding: 1em;
     margin-bottom: 1.5em;
     border-radius: 0.3em;
@@ -530,7 +575,8 @@ nav.pagination .pagination-links a.active {
 .dry-run-info strong {
     display: block;
     margin-bottom: 0.5em;
-    color: #E2E8F0; /* Brighter text for the heading */
+    color: #E2E8F0;
+    /* Brighter text for the heading */
 }
 
 .dry-run-info ul {
@@ -541,20 +587,25 @@ nav.pagination .pagination-links a.active {
 /* ================ Trends Page Insights Section ================ */
 .insights-section {
     display: flex;
-    flex-wrap: wrap; /* Allow cards to wrap on smaller screens */
-    gap: 1.5rem; /* Space between cards */
-    margin-top: 2rem; /* Space above the insights section */
+    flex-wrap: wrap;
+    /* Allow cards to wrap on smaller screens */
+    gap: 1.5rem;
+    /* Space between cards */
+    margin-top: 2rem;
+    /* Space above the insights section */
     padding: 1rem;
-    background-color: var(--bg-page); /* Or var(--bg-panel) if preferred */
+    background-color: var(--bg-page);
+    /* Or var(--bg-panel) if preferred */
     border-radius: 0.5em;
 }
 
 .insight-card {
-    flex: 1 1 300px; /* Grow, shrink, with a base width of 300px */
+    flex: 1 1 300px;
+    /* Grow, shrink, with a base width of 300px */
     background-color: var(--bg-panel);
     padding: 1.5rem;
     border-radius: 0.5em;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .insight-card h3 {
@@ -570,16 +621,31 @@ nav.pagination .pagination-links a.active {
 }
 
 .insight-card ul {
-    list-style-type: none; /* Remove default bullets */
+    list-style-type: none;
+    /* Remove default bullets */
     padding-left: 0;
 }
 
 .insight-card li {
     font-size: 0.95rem;
     padding: 0.3rem 0;
-    border-bottom: 1px solid var(--bg-header); /* Subtle separator for list items */
+    border-bottom: 1px solid var(--bg-header);
+    /* Subtle separator for list items */
 }
 
 .insight-card li:last-child {
     border-bottom: none;
+}
+
+/* Styling for the forecast method text in trends.php */
+.forecast-method {
+    font-size: 0.8em;
+    color: #666;
+    margin-left: 8px;
+}
+
+/* Styling for the checkbox containers in portal.php */
+.checkbox-container {
+    display: block;
+    margin-bottom: 5px;
 }

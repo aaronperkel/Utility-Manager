@@ -63,8 +63,10 @@ function validateBillSubmissionData(array $postData, array $filesData, array $al
     $validatedData['costStr'] = $postData['cost'] ?? '';
     $validatedData['dueDateStr'] = $postData['due'] ?? '';
 
-    if (empty($validatedData['billDateStr']) || empty($validatedData['item']) || empty($validatedData['totalStr']) ||
-        empty($validatedData['costStr']) || empty($validatedData['dueDateStr']) || !isset($filesData['view']) || $filesData['view']['error'] === UPLOAD_ERR_NO_FILE) {
+    if (
+        empty($validatedData['billDateStr']) || empty($validatedData['item']) || empty($validatedData['totalStr']) ||
+        empty($validatedData['costStr']) || empty($validatedData['dueDateStr']) || !isset($filesData['view']) || $filesData['view']['error'] === UPLOAD_ERR_NO_FILE
+    ) {
         $errors[] = "Missing one of: date, item, total, cost, due, or PDF.";
     }
 
@@ -75,8 +77,8 @@ function validateBillSubmissionData(array $postData, array $filesData, array $al
     if (!is_numeric($validatedData['totalStr']) || !is_numeric($validatedData['costStr'])) {
         $errors[] = "Total and Cost must be numeric.";
     } else {
-        $validatedData['total'] = (float)$validatedData['totalStr'];
-        $validatedData['cost'] = (float)$validatedData['costStr'];
+        $validatedData['total'] = (float) $validatedData['totalStr'];
+        $validatedData['cost'] = (float) $validatedData['costStr'];
         if ($validatedData['total'] <= 0 || $validatedData['cost'] <= 0) {
             $errors[] = "Total and Cost must be positive values.";
         }
@@ -194,7 +196,7 @@ function insertBillRecord(PDO $dbConnection, array $billDetails, string $filePat
         ':view' => sanitize($filePath),
     ]);
     if ($success) {
-        return (int)$dbConnection->lastInsertId();
+        return (int) $dbConnection->lastInsertId();
     }
     return false;
 }
@@ -306,7 +308,29 @@ function getTotalBillCountForAdmin(PDO $dbConnection): int
     $sql = 'SELECT COUNT(*) FROM tblUtilities'; // Simple count of all rows.
     $stmt = $dbConnection->prepare($sql);
     $stmt->execute();
-    return (int)$stmt->fetchColumn(); // Returns the count as an integer.
+    return (int) $stmt->fetchColumn(); // Returns the count as an integer.
+}
+
+/**
+ * Calculates the total amount owed by each person for all unpaid bills.
+ * @param PDO $dbConnection The PDO database connection object.
+ * @return array An array where keys are person names and values are the total amount they owe.
+ */
+function getOwedAmounts(PDO $dbConnection): array
+{
+    $sql = "
+        SELECT p.personName, SUM(u.fldCost) as totalOwed
+        FROM tblBillOwes bo
+        JOIN tblUtilities u ON bo.billID = u.pmkBillID
+        JOIN tblPeople p ON bo.personID = p.personID
+        WHERE u.fldStatus = 'Unpaid'
+        GROUP BY p.personName
+        HAVING totalOwed > 0
+        ORDER BY p.personName
+    ";
+    $stmt = $dbConnection->prepare($sql);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 }
 
 
@@ -362,7 +386,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $error_messages[] = "DRY RUN: File is missing or has an upload error.";
                 }
-                if(empty($error_messages)) {
+                if (empty($error_messages)) {
                     $dry_run_messages[] = "DRY RUN: Bill data would have been saved to tblUtilities.";
                     $dry_run_messages[] = "DRY RUN: Entries for each person in tblPeople would have been added to tblBillOwes.";
                     $dry_run_messages[] = "DRY RUN: Calendar file (update_ics.php) would have been updated.";
@@ -402,9 +426,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         $peopleForNotification = [];
                         if (!empty($allPeople)) {
-                            foreach($allPeople as $p) {
+                            foreach ($allPeople as $p) {
                                 if (isset($p['personName'])) {
-                                   $peopleForNotification[] = ['personName' => $p['personName']];
+                                    $peopleForNotification[] = ['personName' => $p['personName']];
                                 }
                             }
                         }
@@ -451,8 +475,8 @@ if (isset($_SESSION['dry_run_action_message'])) {
 // $allPeople is already fetched above.
 
 // Pagination setup for admin view
-$billsPerPage = (int)($_ENV['APP_BILLS_PER_PAGE'] ?? 10); // Number of bills per page from .env or default.
-$currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1; // Get current page from URL, default to 1.
+$billsPerPage = (int) ($_ENV['APP_BILLS_PER_PAGE'] ?? 10); // Number of bills per page from .env or default.
+$currentPage = isset($_GET['page']) ? (int) $_GET['page'] : 1; // Get current page from URL, default to 1.
 if ($currentPage < 1) { // Ensure current page is at least 1.
     $currentPage = 1;
 }
@@ -470,6 +494,9 @@ if ($currentPage > $totalPages && $totalBills > 0) {
 // Fetch bills for the current page.
 $cells = getBillsForAdminPage($pdo, $billsPerPage, $offset);
 
+// Get the amounts owed by each person.
+$owedAmounts = getOwedAmounts($pdo);
+
 
 // Generate a CSRF token for forms within the bills list (e.g., send reminder, update owe).
 if (empty($_SESSION['csrf_token_list_forms'])) {
@@ -481,11 +508,25 @@ $csrfTokenListForms = $_SESSION['csrf_token_list_forms'];
 
     <?php if ($is_dry_run_active): ?>
         <div class="messages dry-run-banner">
-            <strong>TESTING/DRY-RUN MODE IS CURRENTLY ACTIVE.</strong> No actual data changes will be made or emails sent from the 'Add New Bill' form.
+            <strong>TESTING/DRY-RUN MODE IS CURRENTLY ACTIVE.</strong> No actual data changes will be made or emails sent
+            from the 'Add New Bill' form.
         </div>
     <?php endif; ?>
 
     <h2 class="section-title">Admin Portal</h2>
+
+    <?php if (!empty($owedAmounts)): ?>
+        <div class="insights-section">
+            <div class="insight-card">
+                <h3>Who Owes What</h3>
+                <ul>
+                    <?php foreach ($owedAmounts as $name => $amount): ?>
+                        <li><?= htmlspecialchars($name) ?>: $<?= htmlspecialchars(number_format((float) $amount, 2)) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <?php if (!empty($error_messages)): ?>
         <div class="messages error-messages">
@@ -522,7 +563,9 @@ $csrfTokenListForms = $_SESSION['csrf_token_list_forms'];
     <?php if (!empty($session_dry_run_action_message)): // For dry run messages from other action scripts (e.g., update_owe) ?>
         <div class="messages dry-run-info">
             <strong>Dry Run Action Summary (from previous action):</strong>
-            <div><?= $session_dry_run_action_message // This string already contains <br> and its components were escaped at source ?></div>
+            <div>
+                <?= $session_dry_run_action_message // This string already contains <br> and its components were escaped at source ?>
+            </div>
         </div>
     <?php endif; ?>
 
@@ -542,30 +585,34 @@ $csrfTokenListForms = $_SESSION['csrf_token_list_forms'];
             </thead>
             <tbody>
                 <?php if (empty($cells)): ?>
-                    <tr><td colspan="8">No bills found for this page.</td></tr> <!-- Adjusted colspan -->
+                    <tr>
+                        <td colspan="8">No bills found for this page.</td>
+                    </tr> <!-- Adjusted colspan -->
                 <?php else: ?>
                     <?php foreach ($cells as $c): ?>
                         <tr>
                             <td><?= htmlspecialchars($c['fldDate']) ?></td>
                             <td><?= htmlspecialchars($c['fldItem']) ?></td>
-                            <td>$<?= htmlspecialchars(number_format((float)$c['fldTotal'], 2)) ?></td>
-                            <td>$<?= htmlspecialchars(number_format((float)$c['fldCost'], 2)) ?></td>
+                            <td>$<?= htmlspecialchars(number_format((float) $c['fldTotal'], 2)) ?></td>
+                            <td>$<?= htmlspecialchars(number_format((float) $c['fldCost'], 2)) ?></td>
                             <td> <!-- Due Date & Reminder Button -->
                                 <?php if ($c['fldStatus'] !== 'Paid'): ?>
                                     <form method="POST" action="send_reminder.php" style="margin:0; display:inline;">
                                         <input type="hidden" name="csrf_token" value="<?= $csrfTokenListForms ?>">
                                         <input type="hidden" name="sendReminder" value="1">
-                                        <input type="hidden" name="pmk" value="<?= htmlspecialchars((string)$c['pmkBillID']) ?>">
-                                        <button type="submit" class="badge badge-unpaid" title="Send Reminder for <?= htmlspecialchars($c['fldDue']) ?>">
+                                        <input type="hidden" name="pmk" value="<?= htmlspecialchars((string) $c['pmkBillID']) ?>">
+                                        <button type="submit" class="badge badge-unpaid"
+                                            title="Send Reminder for <?= htmlspecialchars($c['fldDue']) ?>">
                                             <?= htmlspecialchars($c['fldDue']) ?>
                                         </button>
                                     </form>
-                            <?php else: ?>
-                                <span class="badge badge-paid" title="Bill is Paid"><?= htmlspecialchars($c['fldDue']) ?></span>
-                            <?php endif; ?>
+                                <?php else: ?>
+                                    <span class="badge badge-paid" title="Bill is Paid"><?= htmlspecialchars($c['fldDue']) ?></span>
+                                <?php endif; ?>
                             </td>
                             <td> <!-- Overall Bill Status -->
-                                <span class="badge <?= strtolower($c['fldStatus']) === 'paid' ? 'badge-paid' : 'badge-unpaid' ?>">
+                                <span
+                                    class="badge <?= strtolower($c['fldStatus']) === 'paid' ? 'badge-paid' : 'badge-unpaid' ?>">
                                     <?= htmlspecialchars($c['fldStatus']) ?>
                                 </span>
                             </td>
@@ -582,12 +629,15 @@ $csrfTokenListForms = $_SESSION['csrf_token_list_forms'];
 
                                         foreach ($allPeople as $person):
                                             $hasEffectivelyPaid = ($c['fldStatus'] === 'Paid') || !in_array($person['personID'], $peopleOwingThisBillIDs);
-                                    ?>
-                                        <label>
-                                            <input type="checkbox" name="paidPersonIDs[]" value="<?= $person['personID'] ?>" <?= $hasEffectivelyPaid ? 'checked' : '' ?>>
-                                            <?= htmlspecialchars($person['personName']) ?>
-                                        </label>
-                                    <?php
+                                            ?>
+                                            <div class="checkbox-container">
+                                                <label>
+                                                    <input type="checkbox" name="paidPersonIDs[]" value="<?= $person['personID'] ?>"
+                                                        <?= $hasEffectivelyPaid ? 'checked' : '' ?>>
+                                                    <?= htmlspecialchars($person['personName']) ?>
+                                                </label>
+                                            </div>
+                                            <?php
                                         endforeach;
                                     } else { // Fallback if $allPeople isn't loaded
                                         echo "User list unavailable.";
@@ -597,13 +647,11 @@ $csrfTokenListForms = $_SESSION['csrf_token_list_forms'];
                                 </form>
                             </td>
                             <td> <!-- View/Download Links -->
-                            <a href="<?= htmlspecialchars("{$c['fldView']}") ?>" target="_blank"
-                                class="icon-link">View</a>
-                            |
-                            <a href="<?= htmlspecialchars("{$c['fldView']}") ?>" download
-                                class="icon-link">Download</a>
-                        </td>
-                    </tr>
+                                <a href="<?= htmlspecialchars("{$c['fldView']}") ?>" target="_blank" class="icon-link">View</a>
+                                |
+                                <a href="<?= htmlspecialchars("{$c['fldView']}") ?>" download class="icon-link">Download</a>
+                            </td>
+                        </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </tbody>
