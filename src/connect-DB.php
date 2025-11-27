@@ -91,11 +91,12 @@ try {
         $connectionStatusComment .= ' (SSL DISABLED)';
     }
     if ($sslWarning) {
-         $connectionStatusComment .= "\n     WARNING: " . htmlspecialchars(str_replace("'", "", $sslWarning)) . " -->"; // Basic sanitization for HTML comment
+        $connectionStatusComment .= "\n     WARNING: " . htmlspecialchars(str_replace("'", "", $sslWarning)) . " -->"; // Basic sanitization for HTML comment
     } else {
         $connectionStatusComment .= ' -->';
     }
-    if ($pdo) print $connectionStatusComment;
+    if ($pdo)
+        print $connectionStatusComment;
 
 } catch (PDOException $e) {
     // Catch any exceptions during connection attempt.
@@ -116,7 +117,8 @@ try {
  *
  * @return bool True if Dry-Run mode is active, false otherwise.
  */
-function isDryRunActive(): bool {
+function isDryRunActive(): bool
+{
     // Check if dry-run mode is globally enabled via .env.
     $dryRunEnabled = filter_var($_ENV['APP_DRY_RUN_ENABLED'] ?? 'false', FILTER_VALIDATE_BOOLEAN);
     if (!$dryRunEnabled) {

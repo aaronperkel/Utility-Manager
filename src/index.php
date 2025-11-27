@@ -4,7 +4,7 @@
 // Features pagination for browsing bills.
 
 include 'top.php'; // Includes header, navigation, and database connection (connect-DB.php).
-                // .env variables are also loaded via connect-DB.php.
+// .env variables are also loaded via connect-DB.php.
 
 // --- Function Definitions ---
 
@@ -42,7 +42,7 @@ function getUserOwedAmount(PDO $pdo, string $userName): float
     ";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':userName' => $userName]);
-    return (float)($stmt->fetch(PDO::FETCH_ASSOC)['owed'] ?? 0);
+    return (float) ($stmt->fetch(PDO::FETCH_ASSOC)['owed'] ?? 0);
 }
 
 /**
@@ -81,7 +81,7 @@ function getTotalBillCount(PDO $pdo): int
     $sql = 'SELECT COUNT(*) FROM tblUtilities'; // Simple count of all rows.
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
-    return (int)$stmt->fetchColumn(); // Returns the count as an integer.
+    return (int) $stmt->fetchColumn(); // Returns the count as an integer.
 }
 
 /**
@@ -148,8 +148,8 @@ if (!empty($userName)) {
 }
 
 // --- Pagination Setup ---
-$billsPerPage = (int)($_ENV['APP_BILLS_PER_PAGE'] ?? 10);
-$currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1; // Get current page from URL query param.
+$billsPerPage = (int) ($_ENV['APP_BILLS_PER_PAGE'] ?? 10);
+$currentPage = isset($_GET['page']) ? (int) $_GET['page'] : 1; // Get current page from URL query param.
 if ($currentPage < 1) { // Ensure current page is not less than 1.
     $currentPage = 1;
 }
@@ -207,14 +207,14 @@ $billsByYear = groupBillsByYear($billsForCurrentPage);
                             <tr>
                                 <td><?= htmlspecialchars($cell['fldDate']) ?></td>
                                 <td><?= htmlspecialchars($cell['fldItem']) ?></td>
-                                <td>$<?= htmlspecialchars(number_format((float)$cell['fldTotal'], 2)) ?></td>
-                                <td class="col-cost">$<?= htmlspecialchars(number_format((float)$cell['fldCost'], 2)) ?></td>
+                                <td>$<?= htmlspecialchars(number_format((float) $cell['fldTotal'], 2)) ?></td>
+                                <td class="col-cost">$<?= htmlspecialchars(number_format((float) $cell['fldCost'], 2)) ?></td>
                                 <td><?= htmlspecialchars($cell['fldDue']) ?></td>
                                 <td>
                                     <?php if ($isOwedByCurrentUser): ?>
                                         <span class="badge badge-unpaid">Unpaid by You</span>
                                     <?php else: ?>
-                                        <span class="badge badge-paid">Paid by You / Not Owed</span>
+                                        <span class="badge badge-paid">Paid by You</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>

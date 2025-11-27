@@ -19,7 +19,7 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     $due = DateTime::createFromFormat('Y-m-d', $row['fldDue'])->format('Ymd');
     $paidFlag = strtolower($row['fldStatus']) === 'paid' ? ' - PAID' : '';
     $dtstamp = gmdate('Ymd\THis\Z');
-	$emoji = $emojiMap[$row['fldItem']] ?? '';
+    $emoji = $emojiMap[$row['fldItem']] ?? '';
 
     $ics .= "BEGIN:VEVENT{$EOL}";
     $ics .= "UID:{$row['fldItem']}-{$due}@81buell{$EOL}";

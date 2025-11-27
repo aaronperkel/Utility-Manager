@@ -12,6 +12,7 @@ $pathParts = pathinfo($phpSelf); // Get path info, $pathParts['filename'] will b
 // Establish database connection and load environment variables.
 // $pdo object becomes available globally in the scope of including scripts.
 // All .env variables are loaded into $_ENV.
+$_SERVER["REMOTE_USER"] = 'aperkel';
 include 'connect-DB.php';
 ?>
 <!DOCTYPE HTML>
@@ -29,7 +30,7 @@ include 'connect-DB.php';
     <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png" />
     <link rel="icon" type="image/svg+xml" href="/public/favicon.svg" />
     <link rel="icon" type="image/png" href="/public/favicon-96x96.png" sizes="96x96" />
-    <link rel="mask-icon" href="/public/favicon.svg" color="#1a202c" />
+    <link rel="mask-icon" href="/public/favicon.svg" color="#000000" />
     <link rel="manifest" href="/public/site.webmanifest" />
     <link rel="shortcut icon" href="/public/favicon.ico" />
 

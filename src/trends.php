@@ -132,7 +132,8 @@ foreach ($bill_items as $item) {
                 <ul>
                     <?php foreach ($last_year_totals as $item => $total): ?>
                         <li><?= htmlspecialchars($item) ?>:
-                            <?= is_numeric($total) ? '$' . number_format($total, 2) : htmlspecialchars($total) ?></li>
+                            <?= is_numeric($total) ? '$' . number_format($total, 2) : htmlspecialchars($total) ?>
+                        </li>
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>

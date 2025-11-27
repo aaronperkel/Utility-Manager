@@ -57,31 +57,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($error_messages)) {
         // 2) Process raw body text into HTML:
         //    - Split text into paragraphs based on one or more empty lines.
-    //    - Convert single newlines within paragraphs to <br> tags.
-    //    - HTML escape paragraph content to prevent XSS.
-    $paras = preg_split('/\R\R+/', $bodyRaw, -1, PREG_SPLIT_NO_EMPTY);
-    $htmlBody = '';
-    foreach ($paras as $p) {
-        $cleanParagraph = htmlspecialchars($p, ENT_QUOTES, 'UTF-8');
-        $cleanParagraphWithBreaks = nl2br($cleanParagraph); // Convert newlines to <br>
-        $htmlBody .= "<p style=\"font: 14pt serif;\">{$cleanParagraphWithBreaks}</p>\n";
-    }
+        //    - Convert single newlines within paragraphs to <br> tags.
+        //    - HTML escape paragraph content to prevent XSS.
+        $paras = preg_split('/\R\R+/', $bodyRaw, -1, PREG_SPLIT_NO_EMPTY);
+        $htmlBody = '';
+        foreach ($paras as $p) {
+            $cleanParagraph = htmlspecialchars($p, ENT_QUOTES, 'UTF-8');
+            $cleanParagraphWithBreaks = nl2br($cleanParagraph); // Convert newlines to <br>
+            $htmlBody .= "<p style=\"font: 14pt serif;\">{$cleanParagraphWithBreaks}</p>\n";
+        }
 
-    // 3) Append a standard signature (using configured details).
-    // Note: The original signature with phone number is removed unless also made configurable.
-    $htmlBody .= "<p style=\"font: 14pt serif; margin-top: 20px;\">"
-              . "<span style=\"color: green;\">" . htmlspecialchars($appEmailFromName) . "</span><br>"
-              . "Contact: " . htmlspecialchars($appEmailFromAddress)
-              . "</p>";
+        // 3) Append a standard signature (using configured details).
+        // Note: The original signature with phone number is removed unless also made configurable.
+        $htmlBody .= "<p style=\"font: 14pt serif; margin-top: 20px;\">"
+            . "<span style=\"color: green;\">" . htmlspecialchars($appEmailFromName) . "</span><br>"
+            . "Contact: " . htmlspecialchars($appEmailFromAddress)
+            . "</p>";
 
-    // 4) Prepare email headers using configured "From" address and name.
-    $fromHeader = "From: " . htmlspecialchars($appEmailFromName) . " <" . htmlspecialchars($appEmailFromAddress) . ">";
-    $headers  = "MIME-Version: 1.0\r\n";
-    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $headers .= $fromHeader . "\r\n";
+        // 4) Prepare email headers using configured "From" address and name.
+        $fromHeader = "From: " . htmlspecialchars($appEmailFromName) . " <" . htmlspecialchars($appEmailFromAddress) . ">";
+        $headers = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $headers .= $fromHeader . "\r\n";
 
-    // 5) Use the configured email map for recipients.
-    // $emailMapArray is already loaded from .env.
+        // 5) Use the configured email map for recipients.
+        // $emailMapArray is already loaded from .env.
 
         $sentToForConfirmation = []; // For admin confirmation.
         $recipientsForDryRun = [];
@@ -127,10 +127,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!empty($appConfirmationEmailTo) && filter_var($appConfirmationEmailTo, FILTER_VALIDATE_EMAIL)) {
                 $sentListStr = empty($sentToForConfirmation) ? 'None (or all failed, check logs)' : implode(', ', $sentToForConfirmation);
                 $confirmSubject = 'Admin Confirmation: Custom Email Sent';
-                $confirmBody  = "<p style=\"font:12pt monospace;\">A custom email was sent from the portal.</p>"
-                             . "<p style=\"font:12pt monospace;\"><b>Subject:</b> " . htmlspecialchars($subject) . "</p>"
-                             . "<p style=\"font:12pt monospace;\"><b>Attempted to send to:</b> {$sentListStr}</p>"
-                             . "<hr><h3>Original Message Body (HTML):</h3>" . $htmlBody;
+                $confirmBody = "<p style=\"font:12pt monospace;\">A custom email was sent from the portal.</p>"
+                    . "<p style=\"font:12pt monospace;\"><b>Subject:</b> " . htmlspecialchars($subject) . "</p>"
+                    . "<p style=\"font:12pt monospace;\"><b>Attempted to send to:</b> {$sentListStr}</p>"
+                    . "<hr><h3>Original Message Body (HTML):</h3>" . $htmlBody;
 
                 if (!mail($appConfirmationEmailTo, $confirmSubject, $confirmBody, $headers)) {
                     error_log("Admin confirmation for custom email failed to send to {$appConfirmationEmailTo}.");
@@ -152,7 +152,7 @@ $formBody = $_POST['body'] ?? '';
 
 // TODO: Generate and include CSRF token in the form below for POST requests.
 // Example: $csrfTokenCustomEmail = $_SESSION['csrf_token_custom_email'] = bin2hex(random_bytes(32));
-// Then add: <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfTokenCustomEmail) ?>">
+/* Then add: <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfTokenCustomEmail) ?>"> */
 ?>
 
 <main class="form-area">
@@ -194,17 +194,17 @@ $formBody = $_POST['body'] ?? '';
     }
     ?>
 
-  <div class="form-panel">
-    <form method="POST" action="send_custom_email.php">
-      <label for="subject">Subject</label>
-      <input type="text" id="subject" name="subject" value="<?= htmlspecialchars($formSubject) ?>" required>
+    <div class="form-panel">
+        <form method="POST" action="send_custom_email.php">
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" name="subject" value="<?= htmlspecialchars($formSubject) ?>" required>
 
-      <label for="body">Message</label>
-      <textarea id="body" name="body" rows="6" required><?= htmlspecialchars($formBody) ?></textarea>
+            <label for="body">Message</label>
+            <textarea id="body" name="body" rows="6" required><?= htmlspecialchars($formBody) ?></textarea>
 
-      <button type="submit">Send Email</button>
-    </form>
-  </div>
+            <button type="submit">Send Email</button>
+        </form>
+    </div>
 </main>
 
 <?php include 'footer.php'; ?>

@@ -1,12 +1,12 @@
 <?php
-include '../top.php';
+include 'top.php';
 ?>
 <main>
     <h1>Database Schema and SQL Information</h1>
 
     <p>This page documents the SQL schema for the Utilities Manager application,
-    including table creation statements, example data inserts, migration information,
-    and useful query examples for the normalized database structure.</p>
+        including table creation statements, example data inserts, migration information,
+        and useful query examples for the normalized database structure.</p>
 
     <h2>Table Creation Statements (Normalized Schema)</h2>
 
@@ -25,7 +25,8 @@ CREATE TABLE tblPeople (
 
     <section>
         <h3><code>tblUtilities</code></h3>
-        <p>Stores details for each utility bill. The <code>fldOwe</code> column has been removed in favor of <code>tblBillOwes</code>.</p>
+        <p>Stores details for each utility bill. The <code>fldOwe</code> column has been removed in favor of
+            <code>tblBillOwes</code>.</p>
         <pre>
 CREATE TABLE tblUtilities (
     pmkBillID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -40,8 +41,11 @@ CREATE TABLE tblUtilities (
         </pre>
         <p><strong>Notes on <code>tblUtilities</code> fields:</strong></p>
         <ul>
-            <li><code>fldItem</code>: Could be an <code>ENUM('Gas', 'Electric', 'Internet')</code> if item types are strictly limited. For more flexibility, a foreign key to a <code>tblItems</code> table could be used.</li>
-            <li><code>fldStatus</code>: Could be an <code>ENUM('Unpaid', 'Paid')</code>. `VARCHAR(10)` provides flexibility.</li>
+            <li><code>fldItem</code>: Could be an <code>ENUM('Gas', 'Electric', 'Internet')</code> if item types are
+                strictly limited. For more flexibility, a foreign key to a <code>tblItems</code> table could be used.
+            </li>
+            <li><code>fldStatus</code>: Could be an <code>ENUM('Unpaid', 'Paid')</code>. `VARCHAR(10)` provides
+                flexibility.</li>
         </ul>
     </section>
 
@@ -91,14 +95,15 @@ INSERT INTO tblBillOwes (billID, personID) VALUES (1, 2); -- Owen owes for bill 
 INSERT INTO tblBillOwes (billID, personID) VALUES (1, 3); -- Ben owes for bill 1
         </pre>
         <p>When a person pays their share, their corresponding row is DELETED from this table.
-        If all persons associated with a bill have their entries removed from `tblBillOwes`,
-        the `fldStatus` in `tblUtilities` for that bill is updated to 'Paid'.</p>
+            If all persons associated with a bill have their entries removed from `tblBillOwes`,
+            the `fldStatus` in `tblUtilities` for that bill is updated to 'Paid'.</p>
     </section>
 
     <hr>
 
     <h2>Migrating from Denormalized `fldOwe` to Normalized Structure</h2>
-    <p>If you have existing data in `tblUtilities` with the old `fldOwe` (comma-separated names) column, here's a conceptual migration process:</p>
+    <p>If you have existing data in `tblUtilities` with the old `fldOwe` (comma-separated names) column, here's a
+        conceptual migration process:</p>
     <ol>
         <li><strong>Backup your database.</strong></li>
         <li>Create the new `tblPeople` and `tblBillOwes` tables as defined above.</li>
@@ -134,8 +139,9 @@ ALTER TABLE tblUtilities DROP COLUMN fldOwe;
         <li>Update application code to use the new schema (as done in previous subtasks).</li>
     </ol>
     <p><strong>Note on `ALTER TABLE` for existing `tblUtilities` columns (from previous schema update):</strong></p>
-    <p>If you haven't already applied the data type changes from the previous schema update (e.g., `VARCHAR` to `DATE`/`DECIMAL`), ensure those are done first.
-    Example `ALTER` statements (ensure data cleaning is performed before running these):</p>
+    <p>If you haven't already applied the data type changes from the previous schema update (e.g., `VARCHAR` to
+        `DATE`/`DECIMAL`), ensure those are done first.
+        Example `ALTER` statements (ensure data cleaning is performed before running these):</p>
     <pre>
 -- Ensure data in fldDate and fldDue is 'YYYY-MM-DD'.
 -- Ensure fldTotal and fldCost contain only numeric strings (remove '$', ',').
@@ -187,8 +193,9 @@ SELECT
 FROM tblUtilities u
 ORDER BY u.fldDue DESC;
         </pre>
-        <p>Note: The subquery with `GROUP_CONCAT` lists people currently in `tblBillOwes`. If a bill's `fldStatus` is 'Paid', `peopleOwing` might be empty or NULL, correctly indicating no one currently owes.</p>
+        <p>Note: The subquery with `GROUP_CONCAT` lists people currently in `tblBillOwes`. If a bill's `fldStatus` is
+            'Paid', `peopleOwing` might be empty or NULL, correctly indicating no one currently owes.</p>
     </section>
 
 </main>
-<?php include '../footer.php' ?>
+<?php include 'footer.php' ?>

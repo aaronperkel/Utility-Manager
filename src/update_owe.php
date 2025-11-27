@@ -38,7 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // 2. Get Inputs
     $billID = filter_input(INPUT_POST, 'billID', FILTER_VALIDATE_INT);
     $paidPersonIDs = $_POST['paidPersonIDs'] ?? [];
-    if (!is_array($paidPersonIDs)) $paidPersonIDs = [];
+    if (!is_array($paidPersonIDs))
+        $paidPersonIDs = [];
     $paidPersonIDs = array_map('intval', $paidPersonIDs);
 
 
@@ -94,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             } else { // Person is marked as OWING by form
                 if (!$isCurrentlyOwing) {
-                     // Only add if bill is not globally 'Paid' OR if this action makes it 'Unpaid'
+                    // Only add if bill is not globally 'Paid' OR if this action makes it 'Unpaid'
                     $dryRunMessages[] = "DRY RUN: Would ADD {$personName} (ID: {$personID}) to owing this bill.";
                 } else {
                     // $dryRunMessages[] = "DRY RUN: {$personName} (ID: {$personID}) is already owing (no change needed for this person).";
@@ -106,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $newOverallStatus = ($finalSimulatedOwingCount === 0) ? 'Paid' : 'Unpaid';
         $dryRunMessages[] = "DRY RUN: Based on selections, {$finalSimulatedOwingCount} people would owe. Overall status for bill ID {$billID} would be updated to '{$newOverallStatus}'.";
         if ($currentBillGlobalStatus !== $newOverallStatus) {
-             $dryRunMessages[] = "DRY RUN: Calendar file (update_ics.php) would have been updated due to status change.";
+            $dryRunMessages[] = "DRY RUN: Calendar file (update_ics.php) would have been updated due to status change.";
         }
     } else { // Live Mode
         try {
